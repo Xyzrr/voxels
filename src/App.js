@@ -1,7 +1,13 @@
-import logo from './logo.svg';
-import './App.css';
+import logo from "./logo.svg";
+import "./App.css";
+import { init, animate } from "./block-demo";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    init();
+    animate();
+  }, []);
   return (
     <div className="App">
       <header className="App-header">
@@ -17,6 +23,7 @@ function App() {
         >
           Learn React
         </a>
+        <div id="container"></div>
       </header>
     </div>
   );
