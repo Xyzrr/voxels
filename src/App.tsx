@@ -3,7 +3,7 @@ import './App.css';
 import React, {FC, memo} from 'react';
 
 const App: FC = memo(() => {
-  return null;
+  return <></>;
 });
 
 export default App;
