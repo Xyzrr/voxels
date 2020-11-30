@@ -82,10 +82,14 @@ interface VoxelRendererInterface {
   setPlayer(renderer: VoxelRenderer, player: Player): void;
   bindToElement(renderer: VoxelRenderer, container: HTMLElement): void;
   animate(renderer: VoxelRenderer): void;
-  generateGeometryForCell(
+  generateCellGeometry(
     renderer: VoxelRenderer,
     cellCoord: Coord
   ): THREE.BufferGeometry | null;
+  generateCellMesh(
+    renderer: VoxelRenderer,
+    cellCoord: Coord
+  ): THREE.Mesh | null;
   loadCell(renderer: VoxelRenderer, cellCoord: Coord): void;
 }
 
@@ -178,7 +182,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     animate();
   },
 
-  generateGeometryForCell(renderer, {x: cellX, y: cellY, z: cellZ}) {
+  generateCellGeometry(renderer, {x: cellX, y: cellY, z: cellZ}) {
     const {world} = renderer;
     if (!world) {
       return null;
@@ -240,13 +244,21 @@ export const VoxelRenderer: VoxelRendererInterface = {
     return geometry;
   },
 
-  loadCell(renderer, cellCoord) {
+  generateCellMesh(renderer, cellCoord) {
     const material = new THREE.MeshLambertMaterial({color: 'green'});
-    const geometry = VoxelRenderer.generateGeometryForCell(renderer, cellCoord);
-    console.log('geoemtry', geometry);
+    const geometry = VoxelRenderer.generateCellGeometry(renderer, cellCoord);
 
-    if (geometry) {
-      const mesh = new THREE.Mesh(geometry, material);
+    if (!geometry) {
+      return null;
+    }
+
+    return new THREE.Mesh(geometry, material);
+  },
+
+  loadCell(renderer, cellCoord) {
+    const mesh = VoxelRenderer.generateCellMesh(renderer, cellCoord);
+
+    if (mesh) {
       renderer.scene.add(mesh);
     }
   },

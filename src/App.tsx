@@ -28,8 +28,3 @@ const App: React.FC = React.memo(() => {
 });
 
 export default App;
-
-const WorldGenTest: React.FC = React.memo(() => {
-  console.log(getBlock({x: 0, y: 0, z: 0}));
-  return null;
-});
