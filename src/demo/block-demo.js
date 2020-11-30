@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-import Stats from '../stats.module.js';
+import Stats from './stats.module.js';
 
 import {FirstPersonControls} from './FirstPersonControls.js';
 import {ImprovedNoise} from './ImprovedNoise.js';

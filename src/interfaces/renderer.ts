@@ -74,6 +74,7 @@ export interface VoxelRenderer {
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
+  loadedCells: {[key: string]: THREE.Mesh};
 }
 
 interface VoxelRendererInterface {
@@ -91,6 +92,7 @@ interface VoxelRendererInterface {
     cellCoord: Coord
   ): THREE.Mesh | null;
   loadCell(renderer: VoxelRenderer, cellCoord: Coord): void;
+  loadNearbyCells(renderer: VoxelRenderer): void;
 }
 
 export const VoxelRenderer: VoxelRendererInterface = {
@@ -134,6 +136,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
         glRenderer.setSize(window.innerWidth, window.innerHeight);
         return glRenderer;
       })(),
+
+      loadedCells: {},
     };
 
     return renderer;
@@ -174,9 +178,11 @@ export const VoxelRenderer: VoxelRendererInterface = {
       const delta = now - renderer.lastFrameTime;
       renderer.lastFrameTime = now;
 
-      requestAnimationFrame(animate);
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
+      VoxelRenderer.loadNearbyCells(renderer);
+
+      requestAnimationFrame(animate);
     }
 
     animate();
@@ -260,6 +266,42 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
     if (mesh) {
       renderer.scene.add(mesh);
+      mesh.position.set(
+        cellCoord.x * renderer.cellSize,
+        cellCoord.y * renderer.cellSize,
+        cellCoord.z * renderer.cellSize
+      );
+      renderer.loadedCells[Coord.toString(cellCoord)] = mesh;
+    }
+  },
+
+  loadNearbyCells(renderer) {
+    if (!renderer.player) {
+      return;
+    }
+
+    const {x, y, z} = renderer.player.position;
+
+    const playerCellCoord = {
+      x: Math.floor(x / renderer.cellSize),
+      y: Math.floor(y / renderer.cellSize),
+      z: Math.floor(z / renderer.cellSize),
+    };
+
+    for (let dx = -4; dx < 5; dx++) {
+      for (let dy = -4; dy < 5; dy++) {
+        for (let dz = -4; dz < 5; dz++) {
+          const coord = {
+            x: playerCellCoord.x + dx,
+            y: playerCellCoord.y + dy,
+            z: playerCellCoord.z + dz,
+          };
+          const key = Coord.toString(coord);
+          if (renderer.loadedCells[key] == null) {
+            VoxelRenderer.loadCell(renderer, coord);
+          }
+        }
+      }
     }
   },
 };
