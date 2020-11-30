@@ -4,21 +4,41 @@ export interface Coord {
   z: number;
 }
 
-export interface CoordInterface {
-  toString(coord: Coord): string;
-  fromString(str: string): Coord;
+export interface CoordMap<T> {
+  cache: Map<number, Map<number, Map<number, T>>>;
+  get(coord: Coord): T | null;
+  set(coord: Coord, block: T): void;
 }
 
-export const Coord: CoordInterface = {
-  toString({x, y, z}) {
-    return `${x},${y},${z}`;
-  },
+export function newCoordMap<T>(): CoordMap<T> {
+  const m = new Map();
+  return {
+    cache: m,
 
-  fromString(str) {
-    const split = str.split(',').map(Number);
-    if (split.length !== 3 || split.some(Number.isNaN)) {
-      throw new Error(`invalid Coord string: ${str}`);
-    }
-    return {x: split[0], y: split[1], z: split[2]};
-  },
-};
+    get({x, y, z}) {
+      let xMap = m.get(x);
+      if (xMap == null) {
+        return null;
+      }
+      let yMap = xMap.get(y);
+      if (yMap == null) {
+        return null;
+      }
+      return yMap.get(z) ?? null;
+    },
+
+    set({x, y, z}, block) {
+      let xMap = m.get(x);
+      if (xMap == null) {
+        xMap = new Map();
+        m.set(x, xMap);
+      }
+      let yMap = xMap.get(y);
+      if (yMap == null) {
+        yMap = new Map();
+        xMap.set(y, yMap);
+      }
+      yMap.set(z, block);
+    },
+  };
+}

@@ -1,8 +1,8 @@
 import {Voxel} from './voxel';
-import {Coord} from './coord';
+import {Coord, CoordMap, newCoordMap} from './coord';
 
 export interface VoxelWorld {
-  cache: {[coordStr: string]: Voxel | null};
+  cache: CoordMap<Voxel>;
   getVoxel(coord: Coord): Voxel | null;
   computeVoxel(coord: Coord): Voxel | null;
   updateVoxel(coord: Coord, newVoxel: Voxel | null): void;
@@ -17,15 +17,17 @@ export interface VoxelWorldInterface {
 export const VoxelWorld: VoxelWorldInterface = {
   init() {
     const world: VoxelWorld = {
-      cache: {},
+      cache: newCoordMap(),
 
       getVoxel(coord) {
-        const key = Coord.toString(coord);
-        if (world.cache[key] != null) {
-          return world.cache[key];
+        const fromCache = world.cache.get(coord);
+        if (fromCache != null) {
+          return fromCache;
         }
         const block = world.computeVoxel(coord);
-        world.cache[key] = block;
+        if (block != null) {
+          world.cache.set(coord, block);
+        }
         return block;
       },
 
@@ -49,8 +51,9 @@ export const VoxelWorld: VoxelWorldInterface = {
       },
 
       updateVoxel(coord, newVoxel) {
-        const key = Coord.toString(coord);
-        world.cache[key] = newVoxel;
+        if (newVoxel != null) {
+          world.cache.set(coord, newVoxel);
+        }
       },
     };
 

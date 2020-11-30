@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {Coord} from './coord';
+import {Coord, CoordMap, newCoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
 
@@ -74,7 +74,7 @@ export interface VoxelRenderer {
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
-  loadedCells: {[key: string]: THREE.Mesh};
+  loadedCells: CoordMap<THREE.Mesh>;
 }
 
 interface VoxelRendererInterface {
@@ -137,7 +137,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         return glRenderer;
       })(),
 
-      loadedCells: {},
+      loadedCells: newCoordMap(),
     };
 
     return renderer;
@@ -271,7 +271,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         cellCoord.y * renderer.cellSize,
         cellCoord.z * renderer.cellSize
       );
-      renderer.loadedCells[Coord.toString(cellCoord)] = mesh;
+      renderer.loadedCells.set(cellCoord, mesh);
     }
   },
 
@@ -296,8 +296,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
             y: playerCellCoord.y + dy,
             z: playerCellCoord.z + dz,
           };
-          const key = Coord.toString(coord);
-          if (renderer.loadedCells[key] == null) {
+          if (renderer.loadedCells.get(coord) == null) {
             VoxelRenderer.loadCell(renderer, coord);
           }
         }
