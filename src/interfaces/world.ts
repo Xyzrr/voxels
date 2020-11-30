@@ -33,7 +33,7 @@ export const VoxelWorld: VoxelWorldInterface = {
       },
 
       computeVoxel(coord) {
-        const height = simplex2(coord.x / 16, coord.z / 16) * 8;
+        const height = simplex2(coord.x / 64, coord.z / 64) * 8;
         if (coord.y <= height) {
           return {type: 'dirt'};
         }
