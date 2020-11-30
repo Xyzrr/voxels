@@ -23,7 +23,13 @@ const App: React.FC = React.memo(() => {
     }
   }, [container]);
 
-  return <div ref={React.useCallback((node) => setContainer(node), [])}></div>;
+  return (
+    <div
+      ref={React.useCallback((node) => setContainer(node), [])}
+      onClick={(e) => {
+        e.currentTarget.requestPointerLock();
+      }}></div>
+  );
 });
 
 export default App;

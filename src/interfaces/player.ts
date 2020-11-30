@@ -34,7 +34,7 @@ export const Player: PlayerInterface = {
     const player: Player = {
       position: new Vector3(5, 15, 30),
       rotation: new Euler(0, 0, 0, 'YXZ'),
-      moveSpeed: 10,
+      moveSpeed: 20,
       movingForward: false,
       movingBackward: false,
       movingLeft: false,
@@ -84,6 +84,7 @@ export const Player: PlayerInterface = {
               player.rotation
             )
           );
+          console.log(delta * player.moveSpeed * 60);
         }
 
         if (player.movingBackward) {
