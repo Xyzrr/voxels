@@ -4,41 +4,42 @@ export interface Coord {
   z: number;
 }
 
-export interface CoordMap<T> {
-  cache: Map<number, Map<number, Map<number, T>>>;
-  get(coord: Coord): T | null;
-  set(coord: Coord, block: T): void;
+export type CoordMap<T> = Map<number, Map<number, Map<number, T>>>;
+
+export interface CoordMapInterface {
+  init<T>(): CoordMap<T>;
+  get<T>(map: CoordMap<T>, coord: Coord): T | null;
+  set<T>(map: CoordMap<T>, coord: Coord, block: T): void;
 }
 
-export function newCoordMap<T>(): CoordMap<T> {
-  const m = new Map();
-  return {
-    cache: m,
+export const CoordMap: CoordMapInterface = {
+  init() {
+    return new Map();
+  },
 
-    get({x, y, z}) {
-      let xMap = m.get(x);
-      if (xMap == null) {
-        return null;
-      }
-      let yMap = xMap.get(y);
-      if (yMap == null) {
-        return null;
-      }
-      return yMap.get(z) ?? null;
-    },
+  get(map, {x, y, z}) {
+    let xMap = map.get(x);
+    if (xMap == null) {
+      return null;
+    }
+    let yMap = xMap.get(y);
+    if (yMap == null) {
+      return null;
+    }
+    return yMap.get(z) ?? null;
+  },
 
-    set({x, y, z}, block) {
-      let xMap = m.get(x);
-      if (xMap == null) {
-        xMap = new Map();
-        m.set(x, xMap);
-      }
-      let yMap = xMap.get(y);
-      if (yMap == null) {
-        yMap = new Map();
-        xMap.set(y, yMap);
-      }
-      yMap.set(z, block);
-    },
-  };
-}
+  set(map, {x, y, z}, block) {
+    let xMap = map.get(x);
+    if (xMap == null) {
+      xMap = new Map();
+      map.set(x, xMap);
+    }
+    let yMap = xMap.get(y);
+    if (yMap == null) {
+      yMap = new Map();
+      xMap.set(y, yMap);
+    }
+    yMap.set(z, block);
+  },
+};

@@ -1,5 +1,5 @@
 import {Voxel} from './voxel';
-import {Coord, CoordMap, newCoordMap} from './coord';
+import {Coord, CoordMap} from './coord';
 import {simplex2} from '../util/noise';
 
 export interface VoxelWorld {
@@ -18,16 +18,16 @@ export interface VoxelWorldInterface {
 export const VoxelWorld: VoxelWorldInterface = {
   init() {
     const world: VoxelWorld = {
-      cache: newCoordMap(),
+      cache: CoordMap.init(),
 
       getVoxel(coord) {
-        const fromCache = world.cache.get(coord);
+        const fromCache = CoordMap.get(world.cache, coord);
         if (fromCache != null) {
           return fromCache;
         }
         const block = world.computeVoxel(coord);
         if (block != null) {
-          world.cache.set(coord, block);
+          CoordMap.set(world.cache, coord, block);
         }
         return block;
       },
@@ -42,7 +42,7 @@ export const VoxelWorld: VoxelWorldInterface = {
 
       updateVoxel(coord, newVoxel) {
         if (newVoxel != null) {
-          world.cache.set(coord, newVoxel);
+          CoordMap.set(world.cache, coord, newVoxel);
         }
       },
     };

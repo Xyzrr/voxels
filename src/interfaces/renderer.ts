@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {Coord, CoordMap, newCoordMap} from './coord';
+import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
 
@@ -139,7 +139,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         return glRenderer;
       })(),
 
-      loadedCells: newCoordMap(),
+      loadedCells: CoordMap.init(),
     };
 
     return renderer;
@@ -278,7 +278,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         cellCoord.y * renderer.cellSize,
         cellCoord.z * renderer.cellSize
       );
-      renderer.loadedCells.set(cellCoord, mesh);
+      CoordMap.set(renderer.loadedCells, cellCoord, mesh);
     }
   },
 
@@ -303,7 +303,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
             y: playerCellCoord.y + dy,
             z: playerCellCoord.z + dz,
           };
-          if (renderer.loadedCells.get(coord) == null) {
+          if (CoordMap.get(renderer.loadedCells, coord) == null) {
             VoxelRenderer.loadCell(renderer, coord);
           }
         }
