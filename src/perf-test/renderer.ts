@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {Coord} from './coord';
+import {Player} from './player';
 import {VoxelWorld} from './world';
 
 const VOXEL_FACES = [
@@ -67,58 +68,18 @@ const VOXEL_FACES = [
 
 export interface VoxelRenderer {
   world?: VoxelWorld;
+  player?: Player;
   cellSize: number;
+  lastFrameTime: number;
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
 }
 
-export function initVoxelRenderer(): VoxelRenderer {
-  const renderer: VoxelRenderer = {
-    cellSize: 16,
-
-    camera: (() => {
-      const camera = new THREE.PerspectiveCamera(
-        50,
-        window.innerWidth / window.innerHeight,
-        1,
-        20000
-      );
-      camera.position.set(5, 15, 30);
-      return camera;
-    })(),
-
-    scene: (() => {
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x93d5ed);
-      scene.fog = new THREE.FogExp2(0xffffff, 0.00015);
-
-      function addLight(x: number, y: number, z: number): void {
-        const color = 0xffffff;
-        const intensity = 1;
-        const light = new THREE.DirectionalLight(color, intensity);
-        light.position.set(x, y, z);
-        scene.add(light);
-      }
-      addLight(-1, 2, 4);
-      addLight(1, -1, -2);
-
-      return scene;
-    })(),
-
-    glRenderer: (() => {
-      const glRenderer = new THREE.WebGLRenderer();
-      glRenderer.setPixelRatio(window.devicePixelRatio);
-      glRenderer.setSize(window.innerWidth, window.innerHeight);
-      return glRenderer;
-    })(),
-  };
-
-  return renderer;
-}
-
 interface VoxelRendererInterface {
+  init(): VoxelRenderer;
   setWorld(renderer: VoxelRenderer, world: VoxelWorld): void;
+  setPlayer(renderer: VoxelRenderer, player: Player): void;
   bindToElement(renderer: VoxelRenderer, container: HTMLElement): void;
   animate(renderer: VoxelRenderer): void;
   generateGeometryForCell(
@@ -129,6 +90,51 @@ interface VoxelRendererInterface {
 }
 
 export const VoxelRenderer: VoxelRendererInterface = {
+  init() {
+    const renderer: VoxelRenderer = {
+      cellSize: 16,
+      lastFrameTime: Date.now(),
+
+      camera: (() => {
+        const camera = new THREE.PerspectiveCamera(
+          50,
+          window.innerWidth / window.innerHeight,
+          1,
+          20000
+        );
+        camera.position.set(5, 15, 30);
+        return camera;
+      })(),
+
+      scene: (() => {
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x93d5ed);
+        scene.fog = new THREE.FogExp2(0xffffff, 0.00015);
+
+        function addLight(x: number, y: number, z: number): void {
+          const color = 0xffffff;
+          const intensity = 1;
+          const light = new THREE.DirectionalLight(color, intensity);
+          light.position.set(x, y, z);
+          scene.add(light);
+        }
+        addLight(-1, 2, 4);
+        addLight(1, -1, -2);
+
+        return scene;
+      })(),
+
+      glRenderer: (() => {
+        const glRenderer = new THREE.WebGLRenderer();
+        glRenderer.setPixelRatio(window.devicePixelRatio);
+        glRenderer.setSize(window.innerWidth, window.innerHeight);
+        return glRenderer;
+      })(),
+    };
+
+    return renderer;
+  },
+
   setWorld(renderer, world) {
     const {updateVoxel} = world;
 
@@ -139,13 +145,33 @@ export const VoxelRenderer: VoxelRendererInterface = {
     renderer.world = world;
   },
 
+  setPlayer(renderer, player) {
+    const {update} = player;
+
+    player.update = (delta) => {
+      update(delta);
+      renderer.camera.position.set(
+        player.position.x,
+        player.position.y,
+        player.position.z
+      );
+    };
+
+    renderer.player = player;
+  },
+
   bindToElement(renderer, container) {
     container.appendChild(renderer.glRenderer.domElement);
   },
 
   animate(renderer) {
     function animate(): void {
+      const now = Date.now() / 1000;
+      const delta = now - renderer.lastFrameTime;
+      renderer.lastFrameTime = now;
+
       requestAnimationFrame(animate);
+      renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
     }
 
