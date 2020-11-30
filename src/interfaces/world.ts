@@ -1,5 +1,6 @@
 import {Voxel} from './voxel';
 import {Coord, CoordMap, newCoordMap} from './coord';
+import {simplex2} from '../util/noise';
 
 export interface VoxelWorld {
   cache: CoordMap<Voxel>;
@@ -32,18 +33,7 @@ export const VoxelWorld: VoxelWorldInterface = {
       },
 
       computeVoxel(coord) {
-        const height = Math.sin(coord.x / 10) + Math.sin(coord.z / 10) * 5;
-        // if (
-        //   coord.x >= 0 &&
-        //   coord.y >= 0 &&
-        //   coord.z >= 0 &&
-        //   coord.x < 16 &&
-        //   coord.y < height &&
-        //   coord.z < 16
-        // ) {
-        //   return {type: 'dirt'};
-        // }
-        // return null;
+        const height = simplex2(coord.x / 16, coord.z / 16) * 8;
         if (coord.y <= height) {
           return {type: 'dirt'};
         }
