@@ -2,9 +2,9 @@ import './App.css';
 
 import React from 'react';
 import {getBlock} from './lib/worldGeneration';
-import {VoxelRenderer} from './perf-test/renderer';
-import {VoxelWorld} from './perf-test/world';
-import {Player} from './perf-test/player';
+import {VoxelRenderer} from './interfaces/renderer';
+import {VoxelWorld} from './interfaces/world';
+import {Player} from './interfaces/player';
 
 const App: React.FC = React.memo(() => {
   const [container, setContainer] = React.useState<HTMLElement | null>(null);
