@@ -7,14 +7,21 @@ export interface Player {
 
   movingForward: boolean;
   movingBackward: boolean;
+  movingLeft: boolean;
+  movingRight: boolean;
 
   startMovingForward?(): void;
   stopMovingForward?(): void;
   startMovingBackward?(): void;
   stopMovingBackward?(): void;
-  update(delta: number): void;
+  startMovingLeft?(): void;
+  stopMovingLeft?(): void;
+  startMovingRight?(): void;
+  stopMovingRight?(): void;
 
   rotate(deltaX: number, deltaY: number): void;
+
+  update(delta: number): void;
 }
 
 export interface PlayerInterface {
@@ -30,6 +37,8 @@ export const Player: PlayerInterface = {
       moveSpeed: 10,
       movingForward: false,
       movingBackward: false,
+      movingLeft: false,
+      movingRight: false,
 
       startMovingForward() {
         player.movingForward = true;
@@ -45,6 +54,27 @@ export const Player: PlayerInterface = {
 
       stopMovingBackward() {
         player.movingBackward = false;
+      },
+
+      startMovingLeft() {
+        player.movingLeft = true;
+      },
+
+      stopMovingLeft() {
+        player.movingLeft = false;
+      },
+
+      startMovingRight() {
+        player.movingRight = true;
+      },
+
+      stopMovingRight() {
+        player.movingRight = false;
+      },
+
+      rotate(deltaX, deltaY) {
+        player.rotation.x += deltaX;
+        player.rotation.y += deltaY;
       },
 
       update(delta) {
@@ -63,11 +93,22 @@ export const Player: PlayerInterface = {
             )
           );
         }
-      },
 
-      rotate(deltaX, deltaY) {
-        player.rotation.x += deltaX;
-        player.rotation.y += deltaY;
+        if (player.movingLeft) {
+          player.position.sub(
+            new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+              player.rotation
+            )
+          );
+        }
+
+        if (player.movingRight) {
+          player.position.add(
+            new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+              player.rotation
+            )
+          );
+        }
       },
     };
 
@@ -85,6 +126,16 @@ export const Player: PlayerInterface = {
         player.startMovingBackward?.();
         return;
       }
+
+      if (e.key === 'ArrowLeft' || e.key === 'a') {
+        player.startMovingLeft?.();
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'd') {
+        player.startMovingRight?.();
+        return;
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -95,6 +146,16 @@ export const Player: PlayerInterface = {
 
       if (e.key === 'ArrowDown' || e.key === 's') {
         player.stopMovingBackward?.();
+        return;
+      }
+
+      if (e.key === 'ArrowLeft' || e.key === 'a') {
+        player.stopMovingLeft?.();
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'd') {
+        player.stopMovingRight?.();
         return;
       }
     });
