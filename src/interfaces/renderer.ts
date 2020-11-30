@@ -3,6 +3,8 @@ import {Coord, CoordMap, newCoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
 
+(window as any).THREE = THREE;
+
 const VOXEL_FACES = [
   {
     // left

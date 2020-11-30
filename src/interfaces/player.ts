@@ -49,11 +49,19 @@ export const Player: PlayerInterface = {
 
       update(delta) {
         if (player.movingForward) {
-          player.position.z -= player.moveSpeed * delta;
+          player.position.sub(
+            new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+              player.rotation
+            )
+          );
         }
 
         if (player.movingBackward) {
-          player.position.z += player.moveSpeed * delta;
+          player.position.add(
+            new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+              player.rotation
+            )
+          );
         }
       },
 
@@ -68,24 +76,24 @@ export const Player: PlayerInterface = {
 
   bindToUserControls(player) {
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp') {
+      if (e.key === 'ArrowUp' || e.key === 'w') {
         player.startMovingForward?.();
         return;
       }
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 's') {
         player.startMovingBackward?.();
         return;
       }
     });
 
     window.addEventListener('keyup', (e) => {
-      if (e.key === 'ArrowUp') {
+      if (e.key === 'ArrowUp' || e.key === 'w') {
         player.stopMovingForward?.();
         return;
       }
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 's') {
         player.stopMovingBackward?.();
         return;
       }
