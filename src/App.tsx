@@ -1,7 +1,6 @@
 import './App.css';
 
 import React from 'react';
-import {getBlock} from './lib/worldGeneration';
 import {VoxelRenderer} from './interfaces/renderer';
 import {VoxelWorld} from './interfaces/world';
 import {Player} from './interfaces/player';

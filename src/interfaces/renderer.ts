@@ -154,7 +154,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
   },
 
   setPlayer(renderer, player) {
-    const {update} = player;
+    const {update, rotate} = player;
 
     player.update = (delta) => {
       update(delta);
@@ -162,6 +162,15 @@ export const VoxelRenderer: VoxelRendererInterface = {
         player.position.x,
         player.position.y,
         player.position.z
+      );
+    };
+
+    player.rotate = (deltaX, deltaY) => {
+      rotate(deltaX, deltaY);
+      renderer.camera.rotation.set(
+        player.rotation.x,
+        player.rotation.y,
+        player.rotation.z
       );
     };
 

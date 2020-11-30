@@ -1,7 +1,8 @@
-import {Vector3} from 'three';
+import {Euler, Vector3} from 'three';
 
 export interface Player {
   position: Vector3;
+  rotation: Euler;
   moveSpeed: number;
 
   movingForward: boolean;
@@ -12,6 +13,8 @@ export interface Player {
   startMovingBackward?(): void;
   stopMovingBackward?(): void;
   update(delta: number): void;
+
+  rotate(deltaX: number, deltaY: number): void;
 }
 
 export interface PlayerInterface {
@@ -23,6 +26,7 @@ export const Player: PlayerInterface = {
   init() {
     const player: Player = {
       position: new Vector3(5, 15, 30),
+      rotation: new Euler(0, 0, 0),
       moveSpeed: 10,
       movingForward: false,
       movingBackward: false,
@@ -52,6 +56,11 @@ export const Player: PlayerInterface = {
           player.position.z += player.moveSpeed * delta;
         }
       },
+
+      rotate(deltaX, deltaY) {
+        player.rotation.x += deltaX;
+        player.rotation.y += deltaY;
+      },
     };
 
     return player;
@@ -80,6 +89,10 @@ export const Player: PlayerInterface = {
         player.stopMovingBackward?.();
         return;
       }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      player.rotate(-e.movementY * 0.01, -e.movementX * 0.01);
     });
   },
 };
