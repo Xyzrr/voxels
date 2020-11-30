@@ -26,7 +26,7 @@ export const Player: PlayerInterface = {
   init() {
     const player: Player = {
       position: new Vector3(5, 15, 30),
-      rotation: new Euler(0, 0, 0),
+      rotation: new Euler(0, 0, 0, 'YXZ'),
       moveSpeed: 10,
       movingForward: false,
       movingBackward: false,

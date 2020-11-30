@@ -167,11 +167,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
     player.rotate = (deltaX, deltaY) => {
       rotate(deltaX, deltaY);
-      renderer.camera.rotation.set(
-        player.rotation.x,
-        player.rotation.y,
-        player.rotation.z
-      );
+      renderer.camera.quaternion.setFromEuler(player.rotation);
     };
 
     renderer.player = player;
