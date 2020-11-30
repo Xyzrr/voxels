@@ -1,9 +1,9 @@
-import * as THREE from "three";
+import * as THREE from 'three';
 
-import Stats from "./stats.module.js";
+import Stats from '../stats.module.js';
 
-import { FirstPersonControls } from "./FirstPersonControls.js";
-import { ImprovedNoise } from "./ImprovedNoise.js";
+import {FirstPersonControls} from './FirstPersonControls.js';
+import {ImprovedNoise} from './ImprovedNoise.js';
 
 let container, stats;
 
@@ -18,7 +18,7 @@ const data = generateHeight(worldWidth, worldDepth);
 const clock = new THREE.Clock();
 
 export function init() {
-  container = document.getElementById("container");
+  container = document.getElementById('container');
 
   camera = new THREE.PerspectiveCamera(
     50,
@@ -196,7 +196,7 @@ export function init() {
 
   geometry = new THREE.BufferGeometry().fromGeometry(geometry);
 
-  const texture = new THREE.TextureLoader().load("atlas.png");
+  const texture = new THREE.TextureLoader().load('atlas.png');
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
 
@@ -236,7 +236,7 @@ export function init() {
 
   //
 
-  window.addEventListener("resize", onWindowResize, false);
+  window.addEventListener('resize', onWindowResize, false);
 }
 
 function onWindowResize() {
