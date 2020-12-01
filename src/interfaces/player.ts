@@ -162,7 +162,7 @@ export const Player: PlayerInterface = {
     });
 
     window.addEventListener('mousemove', (e) => {
-      player.rotate(-e.movementY * 0.01, -e.movementX * 0.01);
+      player.rotate(-e.movementY * 0.005, -e.movementX * 0.005);
     });
   },
 };

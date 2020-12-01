@@ -295,9 +295,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
       z: Math.floor(z / renderer.cellSize),
     };
 
-    for (let dx = -4; dx < 5; dx++) {
-      for (let dy = -4; dy < 5; dy++) {
-        for (let dz = -4; dz < 5; dz++) {
+    for (let dx = -8; dx < 9; dx++) {
+      for (let dy = -8; dy < 9; dy++) {
+        for (let dz = -8; dz < 9; dz++) {
           const coord = {
             x: playerCellCoord.x + dx,
             y: playerCellCoord.y + dy,
