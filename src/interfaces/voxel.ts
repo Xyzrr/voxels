@@ -6,4 +6,8 @@ export interface StoneVoxel {
   type: 'stone';
 }
 
-export type Voxel = DirtVoxel | StoneVoxel;
+export interface WaterVoxel {
+  type: 'water';
+}
+
+export type Voxel = DirtVoxel | StoneVoxel | WaterVoxel;

@@ -35,7 +35,7 @@ export const VoxelWorld: VoxelWorldInterface = {
       computeVoxel(coord) {
         const height = simplex2(coord.x / 64, coord.z / 64) * 8;
         if (coord.y <= height) {
-          return {type: 'dirt'};
+          return Math.random() < 0.5 ? {type: 'dirt'} : {type: 'water'};
         }
         return null;
       },

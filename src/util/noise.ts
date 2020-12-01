@@ -18,7 +18,7 @@ class Grad {
   }
 }
 
-var grad3 = [
+const grad3 = [
   new Grad(1, 1, 0),
   new Grad(-1, 1, 0),
   new Grad(1, -1, 0),
@@ -33,7 +33,7 @@ var grad3 = [
   new Grad(0, -1, -1),
 ];
 
-var p = [
+const p = [
   151,
   160,
   137,
@@ -292,8 +292,8 @@ var p = [
   180,
 ];
 // To remove the need for index wrapping, double the permutation table length
-var perm = new Array(512);
-var gradP = new Array(512);
+const perm = new Array(512);
+const gradP = new Array(512);
 
 function seed(seed: number): void {
   if (seed > 0 && seed < 1) {
@@ -306,8 +306,8 @@ function seed(seed: number): void {
     seed |= seed << 8;
   }
 
-  for (var i = 0; i < 256; i++) {
-    var v;
+  for (let i = 0; i < 256; i++) {
+    let v;
     if (i & 1) {
       v = p[i] ^ (seed & 255);
     } else {
@@ -321,21 +321,21 @@ function seed(seed: number): void {
 
 seed(0);
 
-var F2 = 0.5 * (Math.sqrt(3) - 1);
-var G2 = (3 - Math.sqrt(3)) / 6;
+const F2 = 0.5 * (Math.sqrt(3) - 1);
+const G2 = (3 - Math.sqrt(3)) / 6;
 
 export function simplex2(xin: number, yin: number): number {
-  var n0, n1, n2; // Noise contributions from the three corners
+  let n0, n1, n2; // Noise contributions from the three corners
   // Skew the input space to determine which simplex cell we're in
-  var s = (xin + yin) * F2; // Hairy factor for 2D
-  var i = Math.floor(xin + s);
-  var j = Math.floor(yin + s);
-  var t = (i + j) * G2;
-  var x0 = xin - i + t; // The x,y distances from the cell origin, unskewed.
-  var y0 = yin - j + t;
+  let s = (xin + yin) * F2; // Hairy factor for 2D
+  let i = Math.floor(xin + s);
+  let j = Math.floor(yin + s);
+  let t = (i + j) * G2;
+  let x0 = xin - i + t; // The x,y distances from the cell origin, unskewed.
+  let y0 = yin - j + t;
   // For the 2D case, the simplex shape is an equilateral triangle.
   // Determine which simplex we are in.
-  var i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
+  let i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
   if (x0 > y0) {
     // lower triangle, XY order: (0,0)->(1,0)->(1,1)
     i1 = 1;
@@ -348,32 +348,32 @@ export function simplex2(xin: number, yin: number): number {
   // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
   // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
   // c = (3-sqrt(3))/6
-  var x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
-  var y1 = y0 - j1 + G2;
-  var x2 = x0 - 1 + 2 * G2; // Offsets for last corner in (x,y) unskewed coords
-  var y2 = y0 - 1 + 2 * G2;
+  let x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+  let y1 = y0 - j1 + G2;
+  let x2 = x0 - 1 + 2 * G2; // Offsets for last corner in (x,y) unskewed coords
+  let y2 = y0 - 1 + 2 * G2;
   // Work out the hashed gradient indices of the three simplex corners
   i &= 255;
   j &= 255;
-  var gi0 = gradP[i + perm[j]];
-  var gi1 = gradP[i + i1 + perm[j + j1]];
-  var gi2 = gradP[i + 1 + perm[j + 1]];
+  let gi0 = gradP[i + perm[j]];
+  let gi1 = gradP[i + i1 + perm[j + j1]];
+  let gi2 = gradP[i + 1 + perm[j + 1]];
   // Calculate the contribution from the three corners
-  var t0 = 0.5 - x0 * x0 - y0 * y0;
+  let t0 = 0.5 - x0 * x0 - y0 * y0;
   if (t0 < 0) {
     n0 = 0;
   } else {
     t0 *= t0;
     n0 = t0 * t0 * gi0.dot2(x0, y0); // (x,y) of grad3 used for 2D gradient
   }
-  var t1 = 0.5 - x1 * x1 - y1 * y1;
+  let t1 = 0.5 - x1 * x1 - y1 * y1;
   if (t1 < 0) {
     n1 = 0;
   } else {
     t1 *= t1;
     n1 = t1 * t1 * gi1.dot2(x1, y1);
   }
-  var t2 = 0.5 - x2 * x2 - y2 * y2;
+  let t2 = 0.5 - x2 * x2 - y2 * y2;
   if (t2 < 0) {
     n2 = 0;
   } else {
@@ -385,27 +385,27 @@ export function simplex2(xin: number, yin: number): number {
   return 70 * (n0 + n1 + n2);
 }
 
-var F3 = 1 / 3;
-var G3 = 1 / 6;
+let F3 = 1 / 3;
+let G3 = 1 / 6;
 
 export function simplex3(xin: number, yin: number, zin: number): number {
-  var n0, n1, n2, n3; // Noise contributions from the four corners
+  let n0, n1, n2, n3; // Noise contributions from the four corners
 
   // Skew the input space to determine which simplex cell we're in
-  var s = (xin + yin + zin) * F3; // Hairy factor for 2D
-  var i = Math.floor(xin + s);
-  var j = Math.floor(yin + s);
-  var k = Math.floor(zin + s);
+  let s = (xin + yin + zin) * F3; // Hairy factor for 2D
+  let i = Math.floor(xin + s);
+  let j = Math.floor(yin + s);
+  let k = Math.floor(zin + s);
 
-  var t = (i + j + k) * G3;
-  var x0 = xin - i + t; // The x,y distances from the cell origin, unskewed.
-  var y0 = yin - j + t;
-  var z0 = zin - k + t;
+  let t = (i + j + k) * G3;
+  let x0 = xin - i + t; // The x,y distances from the cell origin, unskewed.
+  let y0 = yin - j + t;
+  let z0 = zin - k + t;
 
   // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
   // Determine which simplex we are in.
-  var i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
-  var i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+  let i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+  let i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
   if (x0 >= y0) {
     if (y0 >= z0) {
       i1 = 1;
@@ -457,50 +457,50 @@ export function simplex3(xin: number, yin: number, zin: number): number {
   // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
   // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
   // c = 1/6.
-  var x1 = x0 - i1 + G3; // Offsets for second corner
-  var y1 = y0 - j1 + G3;
-  var z1 = z0 - k1 + G3;
+  let x1 = x0 - i1 + G3; // Offsets for second corner
+  let y1 = y0 - j1 + G3;
+  let z1 = z0 - k1 + G3;
 
-  var x2 = x0 - i2 + 2 * G3; // Offsets for third corner
-  var y2 = y0 - j2 + 2 * G3;
-  var z2 = z0 - k2 + 2 * G3;
+  let x2 = x0 - i2 + 2 * G3; // Offsets for third corner
+  let y2 = y0 - j2 + 2 * G3;
+  let z2 = z0 - k2 + 2 * G3;
 
-  var x3 = x0 - 1 + 3 * G3; // Offsets for fourth corner
-  var y3 = y0 - 1 + 3 * G3;
-  var z3 = z0 - 1 + 3 * G3;
+  let x3 = x0 - 1 + 3 * G3; // Offsets for fourth corner
+  let y3 = y0 - 1 + 3 * G3;
+  let z3 = z0 - 1 + 3 * G3;
 
   // Work out the hashed gradient indices of the four simplex corners
   i &= 255;
   j &= 255;
   k &= 255;
-  var gi0 = gradP[i + perm[j + perm[k]]];
-  var gi1 = gradP[i + i1 + perm[j + j1 + perm[k + k1]]];
-  var gi2 = gradP[i + i2 + perm[j + j2 + perm[k + k2]]];
-  var gi3 = gradP[i + 1 + perm[j + 1 + perm[k + 1]]];
+  let gi0 = gradP[i + perm[j + perm[k]]];
+  let gi1 = gradP[i + i1 + perm[j + j1 + perm[k + k1]]];
+  let gi2 = gradP[i + i2 + perm[j + j2 + perm[k + k2]]];
+  let gi3 = gradP[i + 1 + perm[j + 1 + perm[k + 1]]];
 
   // Calculate the contribution from the four corners
-  var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+  let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
   if (t0 < 0) {
     n0 = 0;
   } else {
     t0 *= t0;
     n0 = t0 * t0 * gi0.dot3(x0, y0, z0); // (x,y) of grad3 used for 2D gradient
   }
-  var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+  let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
   if (t1 < 0) {
     n1 = 0;
   } else {
     t1 *= t1;
     n1 = t1 * t1 * gi1.dot3(x1, y1, z1);
   }
-  var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+  let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
   if (t2 < 0) {
     n2 = 0;
   } else {
     t2 *= t2;
     n2 = t2 * t2 * gi2.dot3(x2, y2, z2);
   }
-  var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+  let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
   if (t3 < 0) {
     n3 = 0;
   } else {

@@ -2,68 +2,75 @@ import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
+import {DRAW_DISTANCE} from '../lib/consts';
 
 (window as any).THREE = THREE;
 
 const VOXEL_FACES = [
   {
     // left
+    uvRow: 0,
     dir: [-1, 0, 0],
     corners: [
-      [0, 1, 0],
-      [0, 0, 0],
-      [0, 1, 1],
-      [0, 0, 1],
+      {pos: [0, 1, 0], uv: [0, 1]},
+      {pos: [0, 0, 0], uv: [0, 0]},
+      {pos: [0, 1, 1], uv: [1, 1]},
+      {pos: [0, 0, 1], uv: [1, 0]},
     ],
   },
   {
     // right
+    uvRow: 0,
     dir: [1, 0, 0],
     corners: [
-      [1, 1, 1],
-      [1, 0, 1],
-      [1, 1, 0],
-      [1, 0, 0],
+      {pos: [1, 1, 1], uv: [0, 1]},
+      {pos: [1, 0, 1], uv: [0, 0]},
+      {pos: [1, 1, 0], uv: [1, 1]},
+      {pos: [1, 0, 0], uv: [1, 0]},
     ],
   },
   {
     // bottom
+    uvRow: 2,
     dir: [0, -1, 0],
     corners: [
-      [1, 0, 1],
-      [0, 0, 1],
-      [1, 0, 0],
-      [0, 0, 0],
+      {pos: [1, 0, 1], uv: [1, 0]},
+      {pos: [0, 0, 1], uv: [0, 0]},
+      {pos: [1, 0, 0], uv: [1, 1]},
+      {pos: [0, 0, 0], uv: [0, 1]},
     ],
   },
   {
     // top
+    uvRow: 1,
     dir: [0, 1, 0],
     corners: [
-      [0, 1, 1],
-      [1, 1, 1],
-      [0, 1, 0],
-      [1, 1, 0],
+      {pos: [0, 1, 1], uv: [1, 1]},
+      {pos: [1, 1, 1], uv: [0, 1]},
+      {pos: [0, 1, 0], uv: [1, 0]},
+      {pos: [1, 1, 0], uv: [0, 0]},
     ],
   },
   {
     // back
+    uvRow: 0,
     dir: [0, 0, -1],
     corners: [
-      [1, 0, 0],
-      [0, 0, 0],
-      [1, 1, 0],
-      [0, 1, 0],
+      {pos: [1, 0, 0], uv: [0, 0]},
+      {pos: [0, 0, 0], uv: [1, 0]},
+      {pos: [1, 1, 0], uv: [0, 1]},
+      {pos: [0, 1, 0], uv: [1, 1]},
     ],
   },
   {
     // front
+    uvRow: 0,
     dir: [0, 0, 1],
     corners: [
-      [0, 0, 1],
-      [1, 0, 1],
-      [0, 1, 1],
-      [1, 1, 1],
+      {pos: [0, 0, 1], uv: [0, 0]},
+      {pos: [1, 0, 1], uv: [1, 0]},
+      {pos: [0, 1, 1], uv: [0, 1]},
+      {pos: [1, 1, 1], uv: [1, 1]},
     ],
   },
 ];
@@ -72,7 +79,12 @@ export interface VoxelRenderer {
   world?: VoxelWorld;
   player?: Player;
   cellSize: number;
+  cellSliceSize: number;
+  tileSize: number;
+  tileTextureWidth: number;
+  tileTextureHeight: number;
   lastFrameTime: number;
+  texture: THREE.Texture;
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -99,9 +111,19 @@ interface VoxelRendererInterface {
 
 export const VoxelRenderer: VoxelRendererInterface = {
   init() {
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load('/atlas.png');
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+
     const renderer: VoxelRenderer = {
       cellSize: 16,
+      cellSliceSize: 256,
+      tileSize: 16,
+      tileTextureWidth: 256,
+      tileTextureHeight: 64,
       lastFrameTime: Date.now(),
+      texture,
 
       camera: (() => {
         const camera = new THREE.PerspectiveCamera(
@@ -196,43 +218,71 @@ export const VoxelRenderer: VoxelRendererInterface = {
   },
 
   generateCellGeometry(renderer, {x: cellX, y: cellY, z: cellZ}) {
-    const {world} = renderer;
+    const {
+      world,
+      cellSize,
+      tileSize,
+      tileTextureWidth,
+      tileTextureHeight,
+    } = renderer;
     if (!world) {
       return null;
     }
 
     const positions = [];
     const normals = [];
+    const uvs = [];
     const indices = [];
 
-    const startX = cellX * renderer.cellSize;
-    const startY = cellY * renderer.cellSize;
-    const startZ = cellZ * renderer.cellSize;
+    const startX = cellX * cellSize;
+    const startY = cellY * cellSize;
+    const startZ = cellZ * cellSize;
 
-    for (let x = 0; x < renderer.cellSize; ++x) {
+    for (let x = 0; x < cellSize; ++x) {
       const voxelX = startX + x;
-      for (let y = 0; y < renderer.cellSize; ++y) {
+      for (let y = 0; y < cellSize; ++y) {
         const voxelY = startY + y;
-        for (let z = 0; z < renderer.cellSize; ++z) {
+        for (let z = 0; z < cellSize; ++z) {
           const voxelZ = startZ + z;
           const voxel = VoxelWorld.getVoxel(world, {
             x: voxelX,
             y: voxelY,
             z: voxelZ,
           });
+
           if (voxel) {
-            for (const {dir, corners} of VOXEL_FACES) {
+            let uvVoxel;
+            switch (voxel.type) {
+              case 'dirt':
+                uvVoxel = 7;
+                break;
+              case 'stone':
+                uvVoxel = 1;
+                break;
+              case 'water':
+                uvVoxel = 12;
+                break;
+            }
+
+            for (const {dir, corners, uvRow} of VOXEL_FACES) {
               const neighbor = VoxelWorld.getVoxel(world, {
                 x: voxelX + dir[0],
                 y: voxelY + dir[1],
                 z: voxelZ + dir[2],
               });
-              if (!neighbor) {
+              if (
+                !neighbor ||
+                (voxel.type !== 'water' && neighbor.type === 'water')
+              ) {
                 // this voxel has no neighbor in this direction so we need a face.
                 const ndx = positions.length / 3;
-                for (const pos of corners) {
+                for (const {pos, uv} of corners) {
                   positions.push(pos[0] + x, pos[1] + y, pos[2] + z);
                   normals.push(...dir);
+                  uvs.push(
+                    ((uvVoxel + uv[0]) * tileSize) / tileTextureWidth,
+                    1 - ((uvRow + 1 - uv[1]) * tileSize) / tileTextureHeight
+                  );
                 }
                 indices.push(ndx, ndx + 1, ndx + 2, ndx + 2, ndx + 1, ndx + 3);
               }
@@ -252,13 +302,27 @@ export const VoxelRenderer: VoxelRendererInterface = {
       'normal',
       new THREE.BufferAttribute(new Float32Array(normals), 3)
     );
+    geometry.setAttribute(
+      'uv',
+      new THREE.BufferAttribute(new Float32Array(uvs), 2)
+    );
     geometry.setIndex(indices);
 
     return geometry;
   },
 
   generateCellMesh(renderer, cellCoord) {
-    const material = new THREE.MeshLambertMaterial({color: 'green'});
+    const {world, texture} = renderer;
+    if (!world) {
+      return null;
+    }
+
+    const material = new THREE.MeshLambertMaterial({
+      map: texture,
+      side: THREE.DoubleSide,
+      alphaTest: 0.1,
+      transparent: true,
+    });
     const geometry = VoxelRenderer.generateCellGeometry(renderer, cellCoord);
 
     if (!geometry) {
@@ -295,15 +359,15 @@ export const VoxelRenderer: VoxelRendererInterface = {
       z: Math.floor(z / renderer.cellSize),
     };
 
-    for (let dx = -8; dx < 9; dx++) {
-      for (let dy = -8; dy < 9; dy++) {
-        for (let dz = -8; dz < 9; dz++) {
+    for (let dx = -DRAW_DISTANCE; dx <= DRAW_DISTANCE; dx++) {
+      for (let dy = -DRAW_DISTANCE; dy <= DRAW_DISTANCE; dy++) {
+        for (let dz = -DRAW_DISTANCE; dz <= DRAW_DISTANCE; dz++) {
           const coord = {
             x: playerCellCoord.x + dx,
             y: playerCellCoord.y + dy,
             z: playerCellCoord.z + dz,
           };
-          if (CoordMap.get(renderer.loadedCells, coord) == null) {
+          if (!CoordMap.get(renderer.loadedCells, coord)) {
             VoxelRenderer.loadCell(renderer, coord);
           }
         }
