@@ -208,9 +208,18 @@ export const VoxelRenderer: VoxelRendererInterface = {
       const delta = now - renderer.lastFrameTime;
       renderer.lastFrameTime = now;
 
+      VoxelRenderer.loadNearbyCells(renderer);
+
+      renderer.loadedCells.forEach((m) =>
+        m.forEach((n) =>
+          n.forEach(
+            (l) =>
+              (l.renderOrder = -l.position.distanceTo(renderer.camera.position))
+          )
+        )
+      );
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
-      VoxelRenderer.loadNearbyCells(renderer);
 
       requestAnimationFrame(animate);
     }
@@ -279,7 +288,11 @@ export const VoxelRenderer: VoxelRendererInterface = {
                   // this voxel has no neighbor in this direction so we need a face.
                   const ndx = positions.length / 3;
                   for (const {pos, uv} of corners) {
-                    positions.push(pos[0] + x, pos[1] + y, pos[2] + z);
+                    positions.push(
+                      pos[0] + x - cellSize / 2,
+                      pos[1] + y - cellSize / 2,
+                      pos[2] + z - cellSize / 2
+                    );
                     normals.push(...dir);
                     uvs.push(
                       ((uvVoxel + uv[0]) * tileSize) / tileTextureWidth,
@@ -332,7 +345,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
     const material = new THREE.MeshLambertMaterial({
       map: texture,
       side: THREE.DoubleSide,
-      alphaTest: 0.1,
       transparent: true,
     });
     const geometry = VoxelRenderer.generateCellGeometry(renderer, cellCoord);
