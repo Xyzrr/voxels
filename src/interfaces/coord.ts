@@ -10,6 +10,7 @@ export interface CoordMapInterface {
   init<T>(): CoordMap<T>;
   get<T>(map: CoordMap<T>, coord: Coord): T | null;
   set<T>(map: CoordMap<T>, coord: Coord, block: T): void;
+  forEach<T>(map: CoordMap<T>, callback: (item: T) => void): void;
 }
 
 export const CoordMap: CoordMapInterface = {
@@ -41,5 +42,9 @@ export const CoordMap: CoordMapInterface = {
       xMap.set(y, yMap);
     }
     yMap.set(z, block);
+  },
+
+  forEach(map, callback) {
+    map.forEach((xMap) => xMap.forEach((yMap) => yMap.forEach(callback)));
   },
 };

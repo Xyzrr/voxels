@@ -210,14 +210,15 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
       VoxelRenderer.loadNearbyCells(renderer);
 
-      renderer.loadedCells.forEach((m) =>
-        m.forEach((n) =>
-          n.forEach(
-            (l) =>
-              (l.renderOrder = -l.position.distanceTo(renderer.camera.position))
-          )
-        )
+      // change render order to use distance from camera instead of z
+      CoordMap.forEach(
+        renderer.loadedCells,
+        (cell) =>
+          (cell.renderOrder = -cell.position.distanceTo(
+            renderer.camera.position
+          ))
       );
+
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
 
@@ -362,9 +363,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
     if (mesh) {
       renderer.scene.add(mesh);
       mesh.position.set(
-        cellCoord.x * renderer.cellSize,
-        cellCoord.y * renderer.cellSize,
-        cellCoord.z * renderer.cellSize
+        cellCoord.x * renderer.cellSize + renderer.cellSize / 2,
+        cellCoord.y * renderer.cellSize + renderer.cellSize / 2,
+        cellCoord.z * renderer.cellSize + renderer.cellSize / 2
       );
       CoordMap.set(renderer.loadedCells, cellCoord, mesh);
     }
