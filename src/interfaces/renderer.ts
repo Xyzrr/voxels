@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
-import {DRAW_DISTANCE} from '../lib/consts';
+import {BLACK, DRAW_DISTANCE, WHITE} from '../lib/consts';
+import {isTransparentVoxel} from './voxel';
 
 (window as any).THREE = THREE;
 
@@ -138,11 +139,11 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
       scene: (() => {
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x93d5ed);
-        scene.fog = new THREE.FogExp2(0xffffff, 0.00015);
+        scene.background = new THREE.Color(BLACK);
+        scene.fog = new THREE.FogExp2(WHITE, 0.00015);
 
         function addLight(x: number, y: number, z: number): void {
-          const color = 0xffffff;
+          const color = WHITE;
           const intensity = 1;
           const light = new THREE.DirectionalLight(color, intensity);
           light.position.set(x, y, z);
@@ -229,68 +230,79 @@ export const VoxelRenderer: VoxelRendererInterface = {
       return null;
     }
 
-    const positions = [];
-    const normals = [];
-    const uvs = [];
-    const indices = [];
+    const positions: number[] = [];
+    const normals: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
 
     const startX = cellX * cellSize;
     const startY = cellY * cellSize;
     const startZ = cellZ * cellSize;
 
-    for (let x = 0; x < cellSize; ++x) {
-      const voxelX = startX + x;
-      for (let y = 0; y < cellSize; ++y) {
-        const voxelY = startY + y;
-        for (let z = 0; z < cellSize; ++z) {
-          const voxelZ = startZ + z;
-          const voxel = VoxelWorld.getVoxel(world, {
-            x: voxelX,
-            y: voxelY,
-            z: voxelZ,
-          });
+    const getGeometryData = (transparent: boolean): void => {
+      for (let x = 0; x < cellSize; ++x) {
+        const voxelX = startX + x;
+        for (let y = 0; y < cellSize; ++y) {
+          const voxelY = startY + y;
+          for (let z = 0; z < cellSize; ++z) {
+            const voxelZ = startZ + z;
+            const voxel = VoxelWorld.getVoxel(world, {
+              x: voxelX,
+              y: voxelY,
+              z: voxelZ,
+            });
 
-          if (voxel) {
-            let uvVoxel;
-            switch (voxel.type) {
-              case 'dirt':
-                uvVoxel = 7;
-                break;
-              case 'stone':
-                uvVoxel = 1;
-                break;
-              case 'water':
-                uvVoxel = 12;
-                break;
-            }
+            if (voxel && isTransparentVoxel(voxel) === transparent) {
+              let uvVoxel;
+              switch (voxel.type) {
+                case 'dirt':
+                  uvVoxel = 7;
+                  break;
+                case 'stone':
+                  uvVoxel = 1;
+                  break;
+                case 'water':
+                  uvVoxel = 12;
+                  break;
+              }
 
-            for (const {dir, corners, uvRow} of VOXEL_FACES) {
-              const neighbor = VoxelWorld.getVoxel(world, {
-                x: voxelX + dir[0],
-                y: voxelY + dir[1],
-                z: voxelZ + dir[2],
-              });
-              if (
-                !neighbor ||
-                (voxel.type !== 'water' && neighbor.type === 'water')
-              ) {
-                // this voxel has no neighbor in this direction so we need a face.
-                const ndx = positions.length / 3;
-                for (const {pos, uv} of corners) {
-                  positions.push(pos[0] + x, pos[1] + y, pos[2] + z);
-                  normals.push(...dir);
-                  uvs.push(
-                    ((uvVoxel + uv[0]) * tileSize) / tileTextureWidth,
-                    1 - ((uvRow + 1 - uv[1]) * tileSize) / tileTextureHeight
+              for (const {dir, corners, uvRow} of VOXEL_FACES) {
+                const neighbor = VoxelWorld.getVoxel(world, {
+                  x: voxelX + dir[0],
+                  y: voxelY + dir[1],
+                  z: voxelZ + dir[2],
+                });
+                if (
+                  !neighbor ||
+                  (voxel.type !== 'water' && neighbor.type === 'water')
+                ) {
+                  // this voxel has no neighbor in this direction so we need a face.
+                  const ndx = positions.length / 3;
+                  for (const {pos, uv} of corners) {
+                    positions.push(pos[0] + x, pos[1] + y, pos[2] + z);
+                    normals.push(...dir);
+                    uvs.push(
+                      ((uvVoxel + uv[0]) * tileSize) / tileTextureWidth,
+                      1 - ((uvRow + 1 - uv[1]) * tileSize) / tileTextureHeight
+                    );
+                  }
+                  indices.push(
+                    ndx,
+                    ndx + 1,
+                    ndx + 2,
+                    ndx + 2,
+                    ndx + 1,
+                    ndx + 3
                   );
                 }
-                indices.push(ndx, ndx + 1, ndx + 2, ndx + 2, ndx + 1, ndx + 3);
               }
             }
           }
         }
       }
-    }
+    };
+    getGeometryData(false);
+    getGeometryData(true);
 
     const geometry = new THREE.BufferGeometry();
 

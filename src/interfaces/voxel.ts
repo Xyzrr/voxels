@@ -11,3 +11,7 @@ export interface WaterVoxel {
 }
 
 export type Voxel = DirtVoxel | StoneVoxel | WaterVoxel;
+
+export function isTransparentVoxel(v: Voxel): boolean {
+  return v.type === 'water';
+}

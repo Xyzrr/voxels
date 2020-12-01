@@ -37,7 +37,7 @@ export const VoxelWorld: VoxelWorldInterface = {
         if (coord.y <= height) {
           return {type: 'dirt'};
         }
-        if (coord.y <= 0) {
+        if (coord.y <= -2) {
           return {type: 'water'};
         }
         return null;
