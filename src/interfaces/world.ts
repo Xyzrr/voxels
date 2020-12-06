@@ -2,6 +2,19 @@ import {Voxel} from './voxel';
 import {Coord, CoordMap} from './coord';
 import {simplex2} from '../util/noise';
 
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import WorldWorker from 'worker-loader!../workers/world';
+
+const worker = new WorldWorker();
+
+worker.onmessage = (event) => {
+  console.log('main', event);
+  if (event.data.type === 'received') {
+    console.log('received', event.data.event);
+  }
+};
+worker.postMessage({a: 1});
+
 export interface VoxelWorld {
   cache: CoordMap<Voxel>;
   getVoxel(coord: Coord): Voxel | null;
