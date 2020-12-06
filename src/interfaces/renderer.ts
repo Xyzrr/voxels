@@ -97,6 +97,7 @@ interface VoxelRendererInterface {
   setWorld(renderer: VoxelRenderer, world: VoxelWorld): void;
   setPlayer(renderer: VoxelRenderer, player: Player): void;
   bindToElement(renderer: VoxelRenderer, container: HTMLElement): void;
+  unbindFromElement(renderer: VoxelRenderer, container: HTMLElement): void;
   animate(renderer: VoxelRenderer): void;
   generateCellGeometry(
     renderer: VoxelRenderer,
@@ -200,6 +201,10 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
   bindToElement(renderer, container) {
     container.appendChild(renderer.glRenderer.domElement);
+  },
+
+  unbindFromElement(renderer, container) {
+    container.removeChild(renderer.glRenderer.domElement);
   },
 
   animate(renderer) {

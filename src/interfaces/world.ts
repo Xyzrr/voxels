@@ -10,7 +10,7 @@ const worker = new WorldWorker();
 worker.onmessage = (event) => {
   console.log('main', event);
   if (event.data.type === 'received') {
-    console.log('received', event.data.event);
+    console.log('received', event.data.ev);
   }
 };
 worker.postMessage({a: 1});

@@ -19,7 +19,10 @@ const App: React.FC = React.memo(() => {
 
       VoxelRenderer.bindToElement(renderer, container);
       VoxelRenderer.animate(renderer);
-      VoxelRenderer.loadCell(renderer, {x: 0, y: 0, z: 0});
+
+      return () => {
+        VoxelRenderer.unbindFromElement(renderer, container);
+      };
     }
   }, [container]);
 
