@@ -186,8 +186,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
     return new Promise<Chunk>((resolve) => {
       if (renderer.world) {
         console.log('Renderer: Loading chunk', chunkCoord);
-        // add dummy chunk so that renderer doesn't keep trying to load it
-        CoordMap.set(renderer.loadedChunks, chunkCoord, {});
 
         VoxelWorld.loadChunk(renderer.world, chunkCoord).then((chunk) => {
           console.log('Renderer: Received loaded chunk', chunk);
@@ -297,6 +295,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
           };
           if (!CoordMap.get(renderer.loadedChunks, coord)) {
             chunkCoordsToLoad.push(coord);
+            // add dummy chunk so that renderer doesn't keep trying to load it
+            CoordMap.set(renderer.loadedChunks, coord, {loading: true});
           }
         }
       }

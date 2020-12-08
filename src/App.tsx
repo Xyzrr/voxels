@@ -5,6 +5,10 @@ import {VoxelRenderer} from './interfaces/renderer';
 import {VoxelWorld} from './interfaces/world';
 import {Player} from './interfaces/player';
 
+(window as any).VoxelRenderer = VoxelRenderer;
+(window as any).VoxelWorld = VoxelWorld;
+(window as any).Player = Player;
+
 const App: React.FC = React.memo(() => {
   const [container, setContainer] = React.useState<HTMLElement | null>(null);
   React.useEffect(() => {
@@ -19,6 +23,9 @@ const App: React.FC = React.memo(() => {
 
       VoxelRenderer.bindToElement(renderer, container);
       VoxelRenderer.animate(renderer);
+
+      (window as any).world = world;
+      (window as any).renderer = renderer;
 
       return () => {
         VoxelRenderer.unbindFromElement(renderer, container);
