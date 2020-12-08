@@ -189,7 +189,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     return new THREE.Mesh(geometry, material);
   },
 
-  loadChunk(renderer, chunkCoord) {
+  async loadChunk(renderer, chunkCoord) {
     return new Promise<Chunk>((resolve) => {
       if (renderer.world) {
         console.log('Renderer: Loading chunk and neighbors', chunkCoord);
@@ -296,7 +296,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     });
   },
 
-  loadNearbyCells(renderer) {
+  async loadNearbyCells(renderer) {
     if (!renderer.player) {
       return;
     }
@@ -327,10 +327,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
       }
     }
 
-    chunkCoordsToLoad.reduce(
-      (accumulator, coord) =>
-        accumulator.then(() => VoxelRenderer.loadChunk(renderer, coord)),
-      Promise.resolve()
-    );
+    for (let coord of chunkCoordsToLoad) {
+      await VoxelRenderer.loadChunk(renderer, coord);
+    }
   },
 };
