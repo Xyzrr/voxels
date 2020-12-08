@@ -1,12 +1,12 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import WorldWorker from 'worker-loader!../workers/worker';
+import Worker from 'worker-loader!../workers/worker';
 
 import {Voxel} from './voxel';
 import {Coord, CoordMap} from './coord';
 import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
 import {ChunkData} from './chunk';
 
-const worker = new WorldWorker();
+const worker = new Worker();
 
 export interface Neighbors {
   left?: ChunkData;

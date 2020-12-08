@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import RendererWorker from 'worker-loader!../workers/worker';
+import Worker from 'worker-loader!../workers/worker';
 
 import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
@@ -11,7 +11,7 @@ import {Chunk} from './chunk';
 
 (window as any).THREE = THREE;
 
-const worker = new RendererWorker();
+const worker = new Worker();
 
 export interface VoxelRenderer {
   world?: VoxelWorld;
