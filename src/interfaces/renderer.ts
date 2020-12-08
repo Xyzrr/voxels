@@ -9,6 +9,7 @@ import {
   BLACK,
   CHUNK_SIZE,
   DRAW_DISTANCE,
+  DRAW_DISTANCE_Y,
   VOXEL_FACES,
   WHITE,
 } from '../lib/consts';
@@ -48,6 +49,7 @@ interface VoxelRendererInterface {
   ): THREE.Mesh | null;
   loadChunk(renderer: VoxelRenderer, cellCoord: Coord): Promise<Chunk>;
   addNearbyCellsToQueue(renderer: VoxelRenderer): void;
+  flushQueue(renderer: VoxelRenderer): Promise<void>;
 }
 
 export const VoxelRenderer: VoxelRendererInterface = {
@@ -161,14 +163,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
       renderer.lastFrameTime = now;
 
       VoxelRenderer.addNearbyCellsToQueue(renderer);
-
-      if (renderer.chunkQueue.length > 0 && !renderer.rendering) {
-        const chunkCoord = renderer.chunkQueue.shift()!;
-        renderer.rendering = true;
-        VoxelRenderer.loadChunk(renderer, chunkCoord).then(
-          () => (renderer.rendering = false)
-        );
-      }
 
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
@@ -317,7 +311,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     });
   },
 
-  async addNearbyCellsToQueue(renderer) {
+  addNearbyCellsToQueue(renderer) {
     if (!renderer.player) {
       return;
     }
@@ -331,7 +325,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     };
 
     for (let dx = -DRAW_DISTANCE; dx <= DRAW_DISTANCE; dx++) {
-      for (let dy = -DRAW_DISTANCE; dy <= DRAW_DISTANCE; dy++) {
+      for (let dy = -DRAW_DISTANCE_Y; dy <= DRAW_DISTANCE_Y; dy++) {
         for (let dz = -DRAW_DISTANCE; dz <= DRAW_DISTANCE; dz++) {
           const coord = {
             x: playerCellCoord.x + dx,
@@ -346,5 +340,19 @@ export const VoxelRenderer: VoxelRendererInterface = {
         }
       }
     }
+
+    VoxelRenderer.flushQueue(renderer);
+  },
+
+  async flushQueue(renderer) {
+    if (renderer.rendering) {
+      return;
+    }
+    renderer.rendering = true;
+    while (renderer.chunkQueue.length > 0) {
+      const chunkCoord = renderer.chunkQueue.shift()!;
+      await VoxelRenderer.loadChunk(renderer, chunkCoord);
+    }
+    renderer.rendering = false;
   },
 };
