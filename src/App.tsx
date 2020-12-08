@@ -38,7 +38,8 @@ const App: React.FC = React.memo(() => {
       ref={React.useCallback((node) => setContainer(node), [])}
       onClick={(e) => {
         e.currentTarget.requestPointerLock();
-      }}></div>
+      }}
+    />
   );
 });
 

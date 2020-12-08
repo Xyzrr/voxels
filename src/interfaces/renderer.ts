@@ -30,6 +30,7 @@ export interface VoxelRenderer {
   loadedChunks: CoordMap<Chunk>;
   chunkQueue: Coord[];
   rendering: boolean;
+  resizeHandler?: () => void;
 }
 
 interface VoxelRendererInterface {
@@ -138,10 +139,19 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
   bindToElement(renderer, container) {
     container.appendChild(renderer.glRenderer.domElement);
+    renderer.resizeHandler = () => {
+      renderer.glRenderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.camera.aspect = window.innerWidth / window.innerHeight;
+      renderer.camera.updateProjectionMatrix();
+    };
+    window.addEventListener('resize', renderer.resizeHandler);
   },
 
   unbindFromElement(renderer, container) {
     container.removeChild(renderer.glRenderer.domElement);
+    if (renderer.resizeHandler) {
+      window.removeEventListener('resize', renderer.resizeHandler);
+    }
   },
 
   animate(renderer) {
