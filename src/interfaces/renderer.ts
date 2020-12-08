@@ -14,7 +14,6 @@ import {
 } from '../lib/consts';
 import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
-import {render} from 'react-dom';
 
 (window as any).THREE = THREE;
 
@@ -29,6 +28,8 @@ export interface VoxelRenderer {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   loadedChunks: CoordMap<Chunk>;
+  chunkQueue: Coord[];
+  rendering: boolean;
 }
 
 interface VoxelRendererInterface {
@@ -44,8 +45,8 @@ interface VoxelRendererInterface {
     data: ChunkGeometryData,
     transparent: boolean
   ): THREE.Mesh | null;
-  loadChunk(renderer: VoxelRenderer, cellCoord: Coord): void;
-  loadNearbyCells(renderer: VoxelRenderer): void;
+  loadChunk(renderer: VoxelRenderer, cellCoord: Coord): Promise<Chunk>;
+  addNearbyCellsToQueue(renderer: VoxelRenderer): void;
 }
 
 export const VoxelRenderer: VoxelRendererInterface = {
@@ -96,6 +97,10 @@ export const VoxelRenderer: VoxelRendererInterface = {
       })(),
 
       loadedChunks: CoordMap.init(),
+
+      chunkQueue: [],
+
+      rendering: false,
     };
 
     return renderer;
@@ -145,7 +150,15 @@ export const VoxelRenderer: VoxelRendererInterface = {
       const delta = now - renderer.lastFrameTime;
       renderer.lastFrameTime = now;
 
-      VoxelRenderer.loadNearbyCells(renderer);
+      VoxelRenderer.addNearbyCellsToQueue(renderer);
+
+      if (renderer.chunkQueue.length > 0 && !renderer.rendering) {
+        const chunkCoord = renderer.chunkQueue.shift()!;
+        renderer.rendering = true;
+        VoxelRenderer.loadChunk(renderer, chunkCoord).then(
+          () => (renderer.rendering = false)
+        );
+      }
 
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
@@ -294,7 +307,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     });
   },
 
-  async loadNearbyCells(renderer) {
+  async addNearbyCellsToQueue(renderer) {
     if (!renderer.player) {
       return;
     }
@@ -307,7 +320,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
       z: Math.floor(z / CHUNK_SIZE),
     };
 
-    const chunkCoordsToLoad = [];
     for (let dx = -DRAW_DISTANCE; dx <= DRAW_DISTANCE; dx++) {
       for (let dy = -DRAW_DISTANCE; dy <= DRAW_DISTANCE; dy++) {
         for (let dz = -DRAW_DISTANCE; dz <= DRAW_DISTANCE; dz++) {
@@ -317,16 +329,12 @@ export const VoxelRenderer: VoxelRendererInterface = {
             z: playerCellCoord.z + dz,
           };
           if (!CoordMap.get(renderer.loadedChunks, coord)) {
-            chunkCoordsToLoad.push(coord);
+            renderer.chunkQueue.push(coord);
             // add dummy chunk so that renderer doesn't keep trying to load it
             CoordMap.set(renderer.loadedChunks, coord, {loading: true});
           }
         }
       }
-    }
-
-    for (let coord of chunkCoordsToLoad) {
-      await VoxelRenderer.loadChunk(renderer, coord);
     }
   },
 };
