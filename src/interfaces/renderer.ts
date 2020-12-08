@@ -5,9 +5,16 @@ import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
-import {BLACK, CHUNK_SIZE, DRAW_DISTANCE, WHITE} from '../lib/consts';
+import {
+  BLACK,
+  CHUNK_SIZE,
+  DRAW_DISTANCE,
+  VOXEL_FACES,
+  WHITE,
+} from '../lib/consts';
 import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
+import {render} from 'react-dom';
 
 (window as any).THREE = THREE;
 
@@ -185,88 +192,106 @@ export const VoxelRenderer: VoxelRendererInterface = {
   loadChunk(renderer, chunkCoord) {
     return new Promise<Chunk>((resolve) => {
       if (renderer.world) {
-        console.log('Renderer: Loading chunk', chunkCoord);
+        console.log('Renderer: Loading chunk and neighbors', chunkCoord);
 
-        VoxelWorld.loadChunk(renderer.world, chunkCoord).then((chunk) => {
-          console.log('Renderer: Received loaded chunk', chunk);
-          if (renderer.world != null && chunk != null) {
-            // const neighbors = VoxelWorld.getNeighbors(
-            //   renderer.world,
-            //   chunkCoord
-            // );
+        VoxelWorld.loadChunkAndNeighbors(renderer.world, chunkCoord).then(
+          ({chunk, neighbors}) => {
+            console.log('Renderer: Loaded chunk and neighbors at', chunkCoord);
 
-            // worker.postMessage(
-            //   {
-            //     type: 'generateChunkGeometry',
-            //     chunkCoord,
-            //     chunk,
-            //     neighbors,
-            //   },
-            //   [
-            //     chunk.buffer,
-            //     ...Object.values(neighbors)
-            //       .filter((n) => n != null)
-            //       .map((n) => n.buffer),
-            //   ]
-            // );
+            if (renderer.world != null) {
+              console.log('Renderer: Posting generate chunk message');
 
-            console.log('Renderer: Posting generate chunk message');
-            worker.postMessage(
-              {
-                type: 'generateChunkGeometry',
-                chunk,
-                neighbors: {},
-              },
-              [chunk.buffer]
-            );
+              worker.postMessage(
+                {
+                  type: 'generateChunkGeometry',
+                  chunkCoord,
+                  chunk,
+                  neighbors,
+                },
+                [chunk.buffer, ...Object.values(neighbors).map((n) => n.buffer)]
+              );
 
-            worker.onmessage = (e) => {
-              console.log('Renderer: Received message from worker', e);
-              if (e.data.type === 'generateChunkGeometry') {
-                const {opaque, transparent} = e.data;
+              worker.onmessage = (e) => {
+                console.log('Renderer: Received message from worker', e);
+                if (e.data.type === 'generateChunkGeometry') {
+                  const {
+                    opaque,
+                    transparent,
+                    chunk: returnedChunk,
+                    neighbors: returnedNeighbors,
+                  } = e.data;
 
-                const opaqueMesh =
-                  opaque == null
-                    ? undefined
-                    : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
-                const transparentMesh =
-                  transparent == null
-                    ? undefined
-                    : VoxelRenderer.buildChunkMesh(renderer, transparent, true);
+                  if (renderer.world) {
+                    // Reactivate buffers in cache
+                    CoordMap.set(
+                      renderer.world.cache,
+                      chunkCoord,
+                      returnedChunk
+                    );
+                    for (let key of Object.keys(returnedNeighbors)) {
+                      for (let face of VOXEL_FACES) {
+                        if (face.name === key) {
+                          CoordMap.set(
+                            renderer.world.cache,
+                            {
+                              x: chunkCoord.x + face.dir[0],
+                              y: chunkCoord.y + face.dir[1],
+                              z: chunkCoord.z + face.dir[2],
+                            },
+                            returnedNeighbors[key]
+                          );
+                        }
+                      }
+                    }
+                  }
 
-                const chunk: Chunk = {};
+                  const opaqueMesh =
+                    opaque == null
+                      ? undefined
+                      : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
+                  const transparentMesh =
+                    transparent == null
+                      ? undefined
+                      : VoxelRenderer.buildChunkMesh(
+                          renderer,
+                          transparent,
+                          true
+                        );
 
-                if (opaqueMesh) {
-                  console.log('Renderer: Adding opaque mesh', opaqueMesh);
-                  renderer.scene.add(opaqueMesh);
-                  opaqueMesh.position.set(
-                    chunkCoord.x * CHUNK_SIZE,
-                    chunkCoord.y * CHUNK_SIZE,
-                    chunkCoord.z * CHUNK_SIZE
-                  );
-                  chunk.opaqueMesh = opaqueMesh;
+                  const chunk: Chunk = {};
+
+                  if (opaqueMesh) {
+                    console.log('Renderer: Adding opaque mesh', opaqueMesh);
+                    renderer.scene.add(opaqueMesh);
+                    opaqueMesh.position.set(
+                      chunkCoord.x * CHUNK_SIZE,
+                      chunkCoord.y * CHUNK_SIZE,
+                      chunkCoord.z * CHUNK_SIZE
+                    );
+                    chunk.opaqueMesh = opaqueMesh;
+                  }
+
+                  if (transparentMesh) {
+                    console.log(
+                      'Renderer: Adding transparent mesh',
+                      transparentMesh
+                    );
+                    renderer.scene.add(transparentMesh);
+                    transparentMesh.position.set(
+                      chunkCoord.x * CHUNK_SIZE,
+                      chunkCoord.y * CHUNK_SIZE,
+                      chunkCoord.z * CHUNK_SIZE
+                    );
+                    chunk.transparentMesh = transparentMesh;
+                  }
+
+                  CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
+                  resolve(chunk);
                 }
-
-                if (transparentMesh) {
-                  console.log(
-                    'Renderer: Adding transparent mesh',
-                    transparentMesh
-                  );
-                  renderer.scene.add(transparentMesh);
-                  transparentMesh.position.set(
-                    chunkCoord.x * CHUNK_SIZE,
-                    chunkCoord.y * CHUNK_SIZE,
-                    chunkCoord.z * CHUNK_SIZE
-                  );
-                  chunk.transparentMesh = transparentMesh;
-                }
-
-                CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
-                resolve(chunk);
-              }
-            };
+              };
+            }
           }
-        });
+        );
       }
     });
   },

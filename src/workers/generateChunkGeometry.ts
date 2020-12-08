@@ -163,8 +163,15 @@ export function generateChunkGeometry(data: {
       type: 'generateChunkGeometry',
       transparent: transparentGeometry,
       opaque: opaqueGeometry,
+      chunk,
+      neighbors,
     },
-    [...opaqueBuffer, ...transparentBuffer]
+    [
+      ...opaqueBuffer,
+      ...transparentBuffer,
+      chunk.buffer,
+      ...Object.values(neighbors).map((n) => n.buffer),
+    ]
   );
 
   let totalTime = Date.now() - startTime;
