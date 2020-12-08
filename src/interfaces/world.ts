@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import WorldWorker from 'worker-loader!../workers/world';
+import WorldWorker from 'worker-loader!../workers/worker';
 
 import {Voxel} from './voxel';
 import {Coord, CoordMap} from './coord';
@@ -93,7 +93,7 @@ export const VoxelWorld: VoxelWorldInterface = {
   loadChunk(world, chunkCoord) {
     return new Promise((resolve) => {
       console.log('World: Posting load chunk message', chunkCoord);
-      worker.postMessage({type: 'loadChunk', coord: chunkCoord});
+      worker.postMessage({type: 'loadChunk', chunkCoord});
       worker.onmessage = (event) => {
         console.log('World: Received message from worker', event);
         if (event.data.type === 'loadChunk') {

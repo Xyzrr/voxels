@@ -1,5 +1,3 @@
-import {simplex2} from '../util/noise';
-import {Coord} from '../interfaces/coord';
 import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
 import {Voxel} from '../interfaces/voxel';
 import {ChunkData} from '../interfaces/chunk';
@@ -7,17 +5,6 @@ import {Neighbors} from '../interfaces/world';
 
 // eslint-disable-next-line no-restricted-globals
 const ctx: Worker = self as any;
-
-function computeVoxel(coord: Coord): Voxel {
-  const height = simplex2(coord.x / 64, coord.z / 64) * 8;
-  if (coord.y <= height) {
-    return Voxel.dirt;
-  }
-  if (coord.y <= -2) {
-    return Voxel.water;
-  }
-  return Voxel.air;
-}
 
 const tileSize = 16;
 const tileTextureWidth = 256;
@@ -65,6 +52,22 @@ function getVoxel(
   return chunk[index];
 }
 
+export function getUv(voxel: Voxel): number {
+  switch (voxel) {
+    case Voxel.dirt:
+      return 7;
+      break;
+    case Voxel.stone:
+      return 1;
+      break;
+    case Voxel.water:
+      return 12;
+      break;
+    default:
+      return 0;
+  }
+}
+
 function getGeometry(
   chunk: ChunkData,
   neighbors: Neighbors,
@@ -81,18 +84,7 @@ function getGeometry(
         const voxel = getVoxel(i, j, k, chunk, neighbors);
 
         if (voxel !== Voxel.air && Voxel.isTransparent(voxel) === transparent) {
-          let uvVoxel = 0;
-          switch (voxel) {
-            case Voxel.dirt:
-              uvVoxel = 7;
-              break;
-            case Voxel.stone:
-              uvVoxel = 1;
-              break;
-            case Voxel.water:
-              uvVoxel = 12;
-              break;
-          }
+          const uvVoxel = getUv(voxel);
 
           for (const {dir, corners, uvRow} of VOXEL_FACES) {
             const neighbor = getVoxel(
@@ -149,83 +141,32 @@ function getGeometry(
   ];
 }
 
-ctx.addEventListener('message', (e) => {
-  if (e.data.type === 'loadChunk') {
-    console.log('Worker (world): Loading chunk', e.data.coord, '...');
-    let startTime = Date.now();
+export function generateChunkGeometry(data: {
+  chunk: ChunkData;
+  neighbors: Neighbors;
+}) {
+  console.log('Renderer (worker): Generating geometry...');
+  let startTime = Date.now();
 
-    const chunkCoord = e.data.coord;
-    const voxels = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+  const chunk = data.chunk;
+  const neighbors = data.neighbors;
 
-    for (let i = 0; i < CHUNK_SIZE; i++) {
-      for (let j = 0; j < CHUNK_SIZE; j++) {
-        for (let k = 0; k < CHUNK_SIZE; k++) {
-          const coord = {
-            x: chunkCoord.x * CHUNK_SIZE + i,
-            y: chunkCoord.y * CHUNK_SIZE + j,
-            z: chunkCoord.z * CHUNK_SIZE + k,
-          };
+  const [opaqueGeometry, opaqueBuffer] = getGeometry(chunk, neighbors, false);
+  const [transparentGeometry, transparentBuffer] = getGeometry(
+    chunk,
+    neighbors,
+    true
+  );
 
-          const voxel = computeVoxel(coord);
-          voxels[i * CHUNK_SIZE * CHUNK_SIZE + j * CHUNK_SIZE + k] = voxel;
-        }
-      }
-    }
+  ctx.postMessage(
+    {
+      type: 'generateChunkGeometry',
+      transparent: transparentGeometry,
+      opaque: opaqueGeometry,
+    },
+    [...opaqueBuffer, ...transparentBuffer]
+  );
 
-    ctx.postMessage({type: 'loadChunk', coord: e.data.coord, voxels}, [
-      voxels.buffer,
-    ]);
-
-    let totalTime = Date.now() - startTime;
-    console.log(
-      'Worker (world): Loaded chunk at',
-      e.data.coord,
-      'in',
-      totalTime,
-      'ms'
-    );
-  }
-
-  /** This should
-   *  not be here! Remove after done testing.
-   */
-  if (e.data.type === 'generateChunkGeometry') {
-    console.log(
-      'Worker (renderer): Generating geometry for',
-      e.data.chunkCoord,
-      '...'
-    );
-    let startTime = Date.now();
-
-    const chunk = e.data.chunk;
-    const neighbors = e.data.neighbors;
-
-    const [opaqueGeometry, opaqueBuffer] = getGeometry(chunk, neighbors, false);
-    const [transparentGeometry, transparentBuffer] = getGeometry(
-      chunk,
-      neighbors,
-      true
-    );
-
-    ctx.postMessage(
-      {
-        type: 'generateChunkGeometry',
-        transparent: transparentGeometry,
-        opaque: opaqueGeometry,
-        chunkCoord: e.data.chunkCoord,
-      },
-      [...opaqueBuffer, ...transparentBuffer]
-    );
-
-    let totalTime = Date.now() - startTime;
-    console.log(
-      'Worker (renderer): Generated geometry for',
-      e.data.chunkCoord,
-      'in',
-      totalTime,
-      'ms'
-    );
-  }
-});
-
-export {};
+  let totalTime = Date.now() - startTime;
+  console.log('Renderer (worker): Generated geometry in', totalTime, 'ms');
+}

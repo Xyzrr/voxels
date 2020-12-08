@@ -1,14 +1,13 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import RendererWorker from 'worker-loader!../workers/world';
+import RendererWorker from 'worker-loader!../workers/worker';
 
 import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
 import {BLACK, CHUNK_SIZE, DRAW_DISTANCE, WHITE} from '../lib/consts';
-import {ChunkGeometryData} from '../workers/renderer';
+import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
-import {resolve} from 'path';
 
 (window as any).THREE = THREE;
 
@@ -217,7 +216,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
             worker.postMessage(
               {
                 type: 'generateChunkGeometry',
-                chunkCoord,
                 chunk,
                 neighbors: {},
               },
@@ -227,7 +225,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
             worker.onmessage = (e) => {
               console.log('Renderer: Received message from worker', e);
               if (e.data.type === 'generateChunkGeometry') {
-                const {chunkCoord, opaque, transparent} = e.data;
+                const {opaque, transparent} = e.data;
 
                 const opaqueMesh =
                   opaque == null
