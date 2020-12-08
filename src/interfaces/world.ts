@@ -1,31 +1,35 @@
-import {Voxel} from './voxel';
-import {Coord, CoordMap} from './coord';
-import {simplex2} from '../util/noise';
-
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import WorldWorker from 'worker-loader!../workers/world';
 
+import {Voxel} from './voxel';
+import {Coord, CoordMap} from './coord';
+import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
+import {ChunkData} from './chunk';
+
 const worker = new WorldWorker();
 
-worker.onmessage = (event) => {
-  console.log('main', event);
-  if (event.data.type === 'received') {
-    console.log('received', event.data.ev);
-  }
-};
-worker.postMessage({a: 1});
+export interface Neighbors {
+  left?: ChunkData;
+  right?: ChunkData;
+  bottom?: ChunkData;
+  top?: ChunkData;
+  back?: ChunkData;
+  front?: ChunkData;
+}
 
 export interface VoxelWorld {
-  cache: CoordMap<Voxel>;
+  cache: CoordMap<ChunkData>;
   getVoxel(coord: Coord): Voxel | null;
-  computeVoxel(coord: Coord): Voxel | null;
   updateVoxel(coord: Coord, newVoxel: Voxel | null): void;
 }
 
 export interface VoxelWorldInterface {
   init(): VoxelWorld;
   getVoxel(world: VoxelWorld, coord: Coord): Voxel | null;
+  getChunk(world: VoxelWorld, chunkCoord: Coord): ChunkData | null;
+  getNeighbors(world: VoxelWorld, chunkCoord: Coord): Neighbors;
   updateVoxel(world: VoxelWorld, coord: Coord, newVoxel: Voxel | null): void;
+  loadChunk(world: VoxelWorld, chunkCoord: Coord): Promise<ChunkData>;
 }
 
 export const VoxelWorld: VoxelWorldInterface = {
@@ -34,36 +38,48 @@ export const VoxelWorld: VoxelWorldInterface = {
       cache: CoordMap.init(),
 
       getVoxel(coord) {
-        const fromCache = CoordMap.get(world.cache, coord);
-        if (fromCache != null) {
-          return fromCache;
+        const chunkCoord = {
+          x: Math.floor(coord.x / CHUNK_SIZE),
+          y: Math.floor(coord.y / CHUNK_SIZE),
+          z: Math.floor(coord.z / CHUNK_SIZE),
+        };
+        const chunk = CoordMap.get(world.cache, chunkCoord);
+        if (chunk == null) {
+          return Voxel.unloaded;
         }
-        const block = world.computeVoxel(coord);
-        if (block != null) {
-          CoordMap.set(world.cache, coord, block);
-        }
-        return block;
+        return chunk[
+          (coord.x % CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
+            (coord.y % CHUNK_SIZE) * CHUNK_SIZE +
+            (coord.z % CHUNK_SIZE)
+        ];
       },
 
-      computeVoxel(coord) {
-        const height = simplex2(coord.x / 64, coord.z / 64) * 8;
-        if (coord.y <= height) {
-          return {type: 'dirt'};
-        }
-        if (coord.y <= -2) {
-          return {type: 'water'};
-        }
-        return null;
-      },
-
-      updateVoxel(coord, newVoxel) {
-        if (newVoxel != null) {
-          CoordMap.set(world.cache, coord, newVoxel);
-        }
-      },
+      updateVoxel(coord, newVoxel) {},
     };
 
     return world;
+  },
+
+  getChunk(world, chunkCoord) {
+    return CoordMap.get(world.cache, chunkCoord);
+  },
+
+  getNeighbors(world, chunkCoord) {
+    const neighbors: Neighbors = {};
+
+    for (const {name, dir} of VOXEL_FACES) {
+      const neighbor = VoxelWorld.getChunk(world, {
+        x: chunkCoord.x + dir[0],
+        y: chunkCoord.y + dir[1],
+        z: chunkCoord.z + dir[2],
+      });
+
+      if (neighbor != null) {
+        neighbors[name as keyof Neighbors] = neighbor;
+      }
+    }
+
+    return neighbors;
   },
 
   getVoxel(world, coord) {
@@ -72,5 +88,19 @@ export const VoxelWorld: VoxelWorldInterface = {
 
   updateVoxel(world, coord, newVoxel) {
     return world.updateVoxel(coord, newVoxel);
+  },
+
+  loadChunk(world, chunkCoord) {
+    return new Promise((resolve) => {
+      console.log('World: Posting load chunk message', chunkCoord);
+      worker.postMessage({type: 'loadChunk', coord: chunkCoord});
+      worker.onmessage = (event) => {
+        console.log('World: Received message from worker', event);
+        if (event.data.type === 'loadChunk') {
+          CoordMap.set(world.cache, event.data.coord, event.data.voxels);
+          resolve(event.data.voxels);
+        }
+      };
+    });
   },
 };

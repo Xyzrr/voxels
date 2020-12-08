@@ -1,23 +1,10 @@
-import {simplex2} from '../util/noise';
-import {Coord} from '../interfaces/coord';
-import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
-import {Voxel} from '../interfaces/voxel';
 import {ChunkData} from '../interfaces/chunk';
+import {Voxel} from '../interfaces/voxel';
 import {Neighbors} from '../interfaces/world';
+import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
 
 // eslint-disable-next-line no-restricted-globals
 const ctx: Worker = self as any;
-
-function computeVoxel(coord: Coord): Voxel {
-  const height = simplex2(coord.x / 64, coord.z / 64) * 8;
-  if (coord.y <= height) {
-    return Voxel.dirt;
-  }
-  if (coord.y <= -2) {
-    return Voxel.water;
-  }
-  return Voxel.air;
-}
 
 const tileSize = 16;
 const tileTextureWidth = 256;
@@ -27,7 +14,7 @@ export interface ChunkGeometryData {
   positions: Float32Array;
   normals: Float32Array;
   uvs: Float32Array;
-  indices: Uint16Array;
+  indices: Float32Array;
 }
 
 function getVoxel(
@@ -69,7 +56,7 @@ function getGeometry(
   chunk: ChunkData,
   neighbors: Neighbors,
   transparent: boolean
-): [ChunkGeometryData, ArrayBuffer[]] | [undefined, []] {
+): [ChunkGeometryData, ArrayBuffer[]] {
   const positions: number[] = [];
   const normals: number[] = [];
   const uvs: number[] = [];
@@ -124,14 +111,10 @@ function getGeometry(
     }
   }
 
-  if (positions.length === 0) {
-    return [undefined, []];
-  }
-
   const positionsBuffer = new Float32Array(positions);
   const normalsBuffer = new Float32Array(normals);
   const uvsBuffer = new Float32Array(uvs);
-  const indicesBuffer = new Uint16Array(indices);
+  const indicesBuffer = new Float32Array(indices);
 
   return [
     {
@@ -150,49 +133,10 @@ function getGeometry(
 }
 
 ctx.addEventListener('message', (e) => {
-  if (e.data.type === 'loadChunk') {
-    console.log('Worker (world): Loading chunk', e.data.coord, '...');
-    let startTime = Date.now();
-
-    const chunkCoord = e.data.coord;
-    const voxels = new Uint8Array(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-
-    for (let i = 0; i < CHUNK_SIZE; i++) {
-      for (let j = 0; j < CHUNK_SIZE; j++) {
-        for (let k = 0; k < CHUNK_SIZE; k++) {
-          const coord = {
-            x: chunkCoord.x * CHUNK_SIZE + i,
-            y: chunkCoord.y * CHUNK_SIZE + j,
-            z: chunkCoord.z * CHUNK_SIZE + k,
-          };
-
-          const voxel = computeVoxel(coord);
-          voxels[i * CHUNK_SIZE * CHUNK_SIZE + j * CHUNK_SIZE + k] = voxel;
-        }
-      }
-    }
-
-    ctx.postMessage({type: 'loadChunk', coord: e.data.coord, voxels}, [
-      voxels.buffer,
-    ]);
-
-    let totalTime = Date.now() - startTime;
-    console.log(
-      'Worker (world): Loaded chunk at',
-      e.data.coord,
-      'in',
-      totalTime,
-      'ms'
-    );
-  }
-
-  /** This should
-   *  not be here! Remove after done testing.
-   */
   if (e.data.type === 'generateChunkGeometry') {
     console.log(
       'Worker (renderer): Generating geometry for',
-      e.data.chunkCoord,
+      e.data.coord,
       '...'
     );
     let startTime = Date.now();

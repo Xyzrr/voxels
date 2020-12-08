@@ -1,95 +1,28 @@
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import RendererWorker from 'worker-loader!../workers/world';
+
 import * as THREE from 'three';
 import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
-import {BLACK, DRAW_DISTANCE, WHITE} from '../lib/consts';
-import {isTransparentVoxel} from './voxel';
+import {BLACK, CHUNK_SIZE, DRAW_DISTANCE, WHITE} from '../lib/consts';
+import {ChunkGeometryData} from '../workers/renderer';
+import {Chunk} from './chunk';
+import {resolve} from 'path';
 
 (window as any).THREE = THREE;
 
-const VOXEL_FACES = [
-  {
-    // left
-    uvRow: 0,
-    dir: [-1, 0, 0],
-    corners: [
-      {pos: [0, 1, 0], uv: [0, 1]},
-      {pos: [0, 0, 0], uv: [0, 0]},
-      {pos: [0, 1, 1], uv: [1, 1]},
-      {pos: [0, 0, 1], uv: [1, 0]},
-    ],
-  },
-  {
-    // right
-    uvRow: 0,
-    dir: [1, 0, 0],
-    corners: [
-      {pos: [1, 1, 1], uv: [0, 1]},
-      {pos: [1, 0, 1], uv: [0, 0]},
-      {pos: [1, 1, 0], uv: [1, 1]},
-      {pos: [1, 0, 0], uv: [1, 0]},
-    ],
-  },
-  {
-    // bottom
-    uvRow: 2,
-    dir: [0, -1, 0],
-    corners: [
-      {pos: [1, 0, 1], uv: [1, 0]},
-      {pos: [0, 0, 1], uv: [0, 0]},
-      {pos: [1, 0, 0], uv: [1, 1]},
-      {pos: [0, 0, 0], uv: [0, 1]},
-    ],
-  },
-  {
-    // top
-    uvRow: 1,
-    dir: [0, 1, 0],
-    corners: [
-      {pos: [0, 1, 1], uv: [1, 1]},
-      {pos: [1, 1, 1], uv: [0, 1]},
-      {pos: [0, 1, 0], uv: [1, 0]},
-      {pos: [1, 1, 0], uv: [0, 0]},
-    ],
-  },
-  {
-    // back
-    uvRow: 0,
-    dir: [0, 0, -1],
-    corners: [
-      {pos: [1, 0, 0], uv: [0, 0]},
-      {pos: [0, 0, 0], uv: [1, 0]},
-      {pos: [1, 1, 0], uv: [0, 1]},
-      {pos: [0, 1, 0], uv: [1, 1]},
-    ],
-  },
-  {
-    // front
-    uvRow: 0,
-    dir: [0, 0, 1],
-    corners: [
-      {pos: [0, 0, 1], uv: [0, 0]},
-      {pos: [1, 0, 1], uv: [1, 0]},
-      {pos: [0, 1, 1], uv: [0, 1]},
-      {pos: [1, 1, 1], uv: [1, 1]},
-    ],
-  },
-];
+const worker = new RendererWorker();
 
 export interface VoxelRenderer {
   world?: VoxelWorld;
   player?: Player;
-  cellSize: number;
-  cellSliceSize: number;
-  tileSize: number;
-  tileTextureWidth: number;
-  tileTextureHeight: number;
   lastFrameTime: number;
   texture: THREE.Texture;
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
-  loadedCells: CoordMap<THREE.Mesh>;
+  loadedChunks: CoordMap<Chunk>;
 }
 
 interface VoxelRendererInterface {
@@ -99,15 +32,13 @@ interface VoxelRendererInterface {
   bindToElement(renderer: VoxelRenderer, container: HTMLElement): void;
   unbindFromElement(renderer: VoxelRenderer, container: HTMLElement): void;
   animate(renderer: VoxelRenderer): void;
-  generateCellGeometry(
+  buildChunkGeometry(data: ChunkGeometryData): THREE.BufferGeometry;
+  buildChunkMesh(
     renderer: VoxelRenderer,
-    cellCoord: Coord
-  ): THREE.BufferGeometry | null;
-  generateCellMesh(
-    renderer: VoxelRenderer,
-    cellCoord: Coord
+    data: ChunkGeometryData,
+    transparent: boolean
   ): THREE.Mesh | null;
-  loadCell(renderer: VoxelRenderer, cellCoord: Coord): void;
+  loadChunk(renderer: VoxelRenderer, cellCoord: Coord): void;
   loadNearbyCells(renderer: VoxelRenderer): void;
 }
 
@@ -119,11 +50,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
     texture.minFilter = THREE.NearestFilter;
 
     const renderer: VoxelRenderer = {
-      cellSize: 16,
-      cellSliceSize: 256,
-      tileSize: 16,
-      tileTextureWidth: 256,
-      tileTextureHeight: 64,
       lastFrameTime: Date.now(),
       texture,
 
@@ -163,7 +89,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         return glRenderer;
       })(),
 
-      loadedCells: CoordMap.init(),
+      loadedChunks: CoordMap.init(),
     };
 
     return renderer;
@@ -215,15 +141,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
       VoxelRenderer.loadNearbyCells(renderer);
 
-      // change render order to use distance from camera instead of z
-      CoordMap.forEach(
-        renderer.loadedCells,
-        (cell) =>
-          (cell.renderOrder = -cell.position.distanceTo(
-            renderer.camera.position
-          ))
-      );
-
       renderer.player?.update(delta);
       renderer.glRenderer.render(renderer.scene, renderer.camera);
 
@@ -233,117 +150,25 @@ export const VoxelRenderer: VoxelRendererInterface = {
     animate();
   },
 
-  generateCellGeometry(renderer, {x: cellX, y: cellY, z: cellZ}) {
-    const {
-      world,
-      cellSize,
-      tileSize,
-      tileTextureWidth,
-      tileTextureHeight,
-    } = renderer;
-    if (!world) {
-      return null;
-    }
-
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-
-    const startX = cellX * cellSize;
-    const startY = cellY * cellSize;
-    const startZ = cellZ * cellSize;
-
-    const getGeometryData = (transparent: boolean): void => {
-      for (let x = 0; x < cellSize; ++x) {
-        const voxelX = startX + x;
-        for (let y = 0; y < cellSize; ++y) {
-          const voxelY = startY + y;
-          for (let z = 0; z < cellSize; ++z) {
-            const voxelZ = startZ + z;
-            const voxel = VoxelWorld.getVoxel(world, {
-              x: voxelX,
-              y: voxelY,
-              z: voxelZ,
-            });
-
-            if (voxel && isTransparentVoxel(voxel) === transparent) {
-              let uvVoxel;
-              switch (voxel.type) {
-                case 'dirt':
-                  uvVoxel = 7;
-                  break;
-                case 'stone':
-                  uvVoxel = 1;
-                  break;
-                case 'water':
-                  uvVoxel = 12;
-                  break;
-              }
-
-              for (const {dir, corners, uvRow} of VOXEL_FACES) {
-                const neighbor = VoxelWorld.getVoxel(world, {
-                  x: voxelX + dir[0],
-                  y: voxelY + dir[1],
-                  z: voxelZ + dir[2],
-                });
-                if (
-                  !neighbor ||
-                  (voxel.type !== 'water' && neighbor.type === 'water')
-                ) {
-                  // this voxel has no neighbor in this direction so we need a face.
-                  const ndx = positions.length / 3;
-                  for (const {pos, uv} of corners) {
-                    positions.push(
-                      pos[0] + x - cellSize / 2,
-                      pos[1] + y - cellSize / 2,
-                      pos[2] + z - cellSize / 2
-                    );
-                    normals.push(...dir);
-                    uvs.push(
-                      ((uvVoxel + uv[0]) * tileSize) / tileTextureWidth,
-                      1 - ((uvRow + 1 - uv[1]) * tileSize) / tileTextureHeight
-                    );
-                  }
-                  indices.push(
-                    ndx,
-                    ndx + 1,
-                    ndx + 2,
-                    ndx + 2,
-                    ndx + 1,
-                    ndx + 3
-                  );
-                }
-              }
-            }
-          }
-        }
-      }
-    };
-    getGeometryData(false);
-    getGeometryData(true);
-
+  buildChunkGeometry(data) {
     const geometry = new THREE.BufferGeometry();
 
     geometry.setAttribute(
       'position',
-      new THREE.BufferAttribute(new Float32Array(positions), 3)
+      new THREE.BufferAttribute(data.positions, 3)
     );
-    geometry.setAttribute(
-      'normal',
-      new THREE.BufferAttribute(new Float32Array(normals), 3)
-    );
-    geometry.setAttribute(
-      'uv',
-      new THREE.BufferAttribute(new Float32Array(uvs), 2)
-    );
-    geometry.setIndex(indices);
+    geometry.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(data.uvs, 2));
+    // Shouldn't be converting back to an untyped array but
+    // not sure what to set itemSize to!
+    geometry.setIndex([...data.indices]);
 
     return geometry;
   },
 
-  generateCellMesh(renderer, cellCoord) {
+  buildChunkMesh(renderer, data, transparent) {
     const {world, texture} = renderer;
+
     if (!world) {
       return null;
     }
@@ -351,29 +176,103 @@ export const VoxelRenderer: VoxelRendererInterface = {
     const material = new THREE.MeshLambertMaterial({
       map: texture,
       side: THREE.DoubleSide,
-      transparent: true,
+      transparent,
     });
-    const geometry = VoxelRenderer.generateCellGeometry(renderer, cellCoord);
-
-    if (!geometry) {
-      return null;
-    }
+    const geometry = VoxelRenderer.buildChunkGeometry(data);
 
     return new THREE.Mesh(geometry, material);
   },
 
-  loadCell(renderer, cellCoord) {
-    const mesh = VoxelRenderer.generateCellMesh(renderer, cellCoord);
+  loadChunk(renderer, chunkCoord) {
+    return new Promise<Chunk>((resolve) => {
+      if (renderer.world) {
+        console.log('Renderer: Loading chunk', chunkCoord);
+        // add dummy chunk so that renderer doesn't keep trying to load it
+        CoordMap.set(renderer.loadedChunks, chunkCoord, {});
 
-    if (mesh) {
-      renderer.scene.add(mesh);
-      mesh.position.set(
-        cellCoord.x * renderer.cellSize + renderer.cellSize / 2,
-        cellCoord.y * renderer.cellSize + renderer.cellSize / 2,
-        cellCoord.z * renderer.cellSize + renderer.cellSize / 2
-      );
-      CoordMap.set(renderer.loadedCells, cellCoord, mesh);
-    }
+        VoxelWorld.loadChunk(renderer.world, chunkCoord).then((chunk) => {
+          console.log('Renderer: Received loaded chunk', chunk);
+          if (renderer.world != null && chunk != null) {
+            // const neighbors = VoxelWorld.getNeighbors(
+            //   renderer.world,
+            //   chunkCoord
+            // );
+
+            // worker.postMessage(
+            //   {
+            //     type: 'generateChunkGeometry',
+            //     chunkCoord,
+            //     chunk,
+            //     neighbors,
+            //   },
+            //   [
+            //     chunk.buffer,
+            //     ...Object.values(neighbors)
+            //       .filter((n) => n != null)
+            //       .map((n) => n.buffer),
+            //   ]
+            // );
+
+            console.log('Renderer: Posting generate chunk message');
+            worker.postMessage(
+              {
+                type: 'generateChunkGeometry',
+                chunkCoord,
+                chunk,
+                neighbors: {},
+              },
+              [chunk.buffer]
+            );
+
+            worker.onmessage = (e) => {
+              console.log('Renderer: Received message from worker', e);
+              if (e.data.type === 'generateChunkGeometry') {
+                const {chunkCoord, opaque, transparent} = e.data;
+
+                const opaqueMesh =
+                  opaque == null
+                    ? undefined
+                    : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
+                const transparentMesh =
+                  transparent == null
+                    ? undefined
+                    : VoxelRenderer.buildChunkMesh(renderer, transparent, true);
+
+                const chunk: Chunk = {};
+
+                if (opaqueMesh) {
+                  console.log('Renderer: Adding opaque mesh', opaqueMesh);
+                  renderer.scene.add(opaqueMesh);
+                  opaqueMesh.position.set(
+                    chunkCoord.x * CHUNK_SIZE,
+                    chunkCoord.y * CHUNK_SIZE,
+                    chunkCoord.z * CHUNK_SIZE
+                  );
+                  chunk.opaqueMesh = opaqueMesh;
+                }
+
+                if (transparentMesh) {
+                  console.log(
+                    'Renderer: Adding transparent mesh',
+                    transparentMesh
+                  );
+                  renderer.scene.add(transparentMesh);
+                  transparentMesh.position.set(
+                    chunkCoord.x * CHUNK_SIZE,
+                    chunkCoord.y * CHUNK_SIZE,
+                    chunkCoord.z * CHUNK_SIZE
+                  );
+                  chunk.transparentMesh = transparentMesh;
+                }
+
+                CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
+                resolve(chunk);
+              }
+            };
+          }
+        });
+      }
+    });
   },
 
   loadNearbyCells(renderer) {
@@ -384,11 +283,12 @@ export const VoxelRenderer: VoxelRendererInterface = {
     const {x, y, z} = renderer.player.position;
 
     const playerCellCoord = {
-      x: Math.floor(x / renderer.cellSize),
-      y: Math.floor(y / renderer.cellSize),
-      z: Math.floor(z / renderer.cellSize),
+      x: Math.floor(x / CHUNK_SIZE),
+      y: Math.floor(y / CHUNK_SIZE),
+      z: Math.floor(z / CHUNK_SIZE),
     };
 
+    const chunkCoordsToLoad = [];
     for (let dx = -DRAW_DISTANCE; dx <= DRAW_DISTANCE; dx++) {
       for (let dy = -DRAW_DISTANCE; dy <= DRAW_DISTANCE; dy++) {
         for (let dz = -DRAW_DISTANCE; dz <= DRAW_DISTANCE; dz++) {
@@ -397,11 +297,17 @@ export const VoxelRenderer: VoxelRendererInterface = {
             y: playerCellCoord.y + dy,
             z: playerCellCoord.z + dz,
           };
-          if (!CoordMap.get(renderer.loadedCells, coord)) {
-            VoxelRenderer.loadCell(renderer, coord);
+          if (!CoordMap.get(renderer.loadedChunks, coord)) {
+            chunkCoordsToLoad.push(coord);
           }
         }
       }
     }
+
+    chunkCoordsToLoad.reduce(
+      (accumulator, coord) =>
+        accumulator.then(() => VoxelRenderer.loadChunk(renderer, coord)),
+      Promise.resolve()
+    );
   },
 };

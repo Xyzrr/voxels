@@ -1,17 +1,12 @@
-export interface DirtVoxel {
-  type: 'dirt';
-}
+export type Voxel = number;
 
-export interface StoneVoxel {
-  type: 'stone';
-}
-
-export interface WaterVoxel {
-  type: 'water';
-}
-
-export type Voxel = DirtVoxel | StoneVoxel | WaterVoxel;
-
-export function isTransparentVoxel(v: Voxel): boolean {
-  return v.type === 'water';
-}
+export const Voxel = {
+  unloaded: -1,
+  air: 0,
+  dirt: 1,
+  stone: 2,
+  water: 3,
+  isTransparent(voxel: Voxel) {
+    return voxel === Voxel.water;
+  },
+};
