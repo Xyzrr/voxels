@@ -24,32 +24,40 @@ function getVoxel(
   chunk: ChunkData,
   neighbors: Neighbors
 ): Voxel {
+  let selected = chunk;
+
   if (x < 0) {
-    return 0;
+    x = CHUNK_SIZE - 1;
+    selected = neighbors.left;
   }
 
   if (x >= CHUNK_SIZE) {
-    return 0;
+    x = 0;
+    selected = neighbors.right;
   }
 
   if (y < 0) {
-    return 0;
+    y = CHUNK_SIZE - 1;
+    selected = neighbors.bottom;
   }
 
   if (y >= CHUNK_SIZE) {
-    return 0;
+    y = 0;
+    selected = neighbors.top;
   }
 
   if (z < 0) {
-    return 0;
+    z = CHUNK_SIZE - 1;
+    selected = neighbors.back;
   }
 
   if (z >= CHUNK_SIZE) {
-    return 0;
+    z = 0;
+    selected = neighbors.front;
   }
 
   const index = x * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + z;
-  return chunk[index];
+  return selected[index];
 }
 
 export function getUv(voxel: Voxel): number {
@@ -163,8 +171,15 @@ export function generateChunkGeometry(data: {
       type: 'generateChunkGeometry',
       transparent: transparentGeometry,
       opaque: opaqueGeometry,
+      chunk,
+      neighbors,
     },
-    [...opaqueBuffer, ...transparentBuffer]
+    [
+      ...opaqueBuffer,
+      ...transparentBuffer,
+      chunk.buffer,
+      ...Object.values(neighbors).map((n) => n.buffer),
+    ]
   );
 
   let totalTime = Date.now() - startTime;

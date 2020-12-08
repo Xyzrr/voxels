@@ -9,12 +9,12 @@ import {ChunkData} from './chunk';
 const worker = new Worker();
 
 export interface Neighbors {
-  left?: ChunkData;
-  right?: ChunkData;
-  bottom?: ChunkData;
-  top?: ChunkData;
-  back?: ChunkData;
-  front?: ChunkData;
+  left: ChunkData;
+  right: ChunkData;
+  bottom: ChunkData;
+  top: ChunkData;
+  back: ChunkData;
+  front: ChunkData;
 }
 
 export interface VoxelWorld {
@@ -30,6 +30,10 @@ export interface VoxelWorldInterface {
   getNeighbors(world: VoxelWorld, chunkCoord: Coord): Neighbors;
   updateVoxel(world: VoxelWorld, coord: Coord, newVoxel: Voxel | null): void;
   loadChunk(world: VoxelWorld, chunkCoord: Coord): Promise<ChunkData>;
+  loadChunkAndNeighbors(
+    world: VoxelWorld,
+    chunkCoord: Coord
+  ): Promise<{chunk: ChunkData; neighbors: Neighbors}>;
 }
 
 export const VoxelWorld: VoxelWorldInterface = {
@@ -65,7 +69,7 @@ export const VoxelWorld: VoxelWorldInterface = {
   },
 
   getNeighbors(world, chunkCoord) {
-    const neighbors: Neighbors = {};
+    const neighbors: any = {};
 
     for (const {name, dir} of VOXEL_FACES) {
       const neighbor = VoxelWorld.getChunk(world, {
@@ -74,9 +78,11 @@ export const VoxelWorld: VoxelWorldInterface = {
         z: chunkCoord.z + dir[2],
       });
 
-      if (neighbor != null) {
-        neighbors[name as keyof Neighbors] = neighbor;
+      if (neighbor == null) {
+        throw new Error('Attempted to neighbor before loading it');
       }
+
+      neighbors[name as keyof Neighbors] = neighbor;
     }
 
     return neighbors;
@@ -90,7 +96,7 @@ export const VoxelWorld: VoxelWorldInterface = {
     return world.updateVoxel(coord, newVoxel);
   },
 
-  loadChunk(world, chunkCoord) {
+  async loadChunk(world, chunkCoord) {
     return new Promise((resolve) => {
       console.log('World: Posting load chunk message', chunkCoord);
       worker.postMessage({type: 'loadChunk', chunkCoord});
@@ -102,5 +108,27 @@ export const VoxelWorld: VoxelWorldInterface = {
         }
       };
     });
+  },
+
+  async loadChunkAndNeighbors(world, chunkCoord) {
+    let chunk = CoordMap.get(world.cache, chunkCoord);
+    if (chunk == null) {
+      chunk = await VoxelWorld.loadChunk(world, chunkCoord);
+    }
+
+    let neighbors: any = {};
+    for (const {name, dir} of VOXEL_FACES) {
+      const neighborCoord = {
+        x: chunkCoord.x + dir[0],
+        y: chunkCoord.y + dir[1],
+        z: chunkCoord.z + dir[2],
+      };
+      neighbors[name] = VoxelWorld.getChunk(world, neighborCoord);
+      if (neighbors[name] == null) {
+        neighbors[name] = await VoxelWorld.loadChunk(world, neighborCoord);
+      }
+    }
+
+    return {chunk, neighbors};
   },
 };
