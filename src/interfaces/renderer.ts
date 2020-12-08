@@ -165,9 +165,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     );
     geometry.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
     geometry.setAttribute('uv', new THREE.BufferAttribute(data.uvs, 2));
-    // Shouldn't be converting back to an untyped array but
-    // not sure what to set itemSize to!
-    geometry.setIndex([...data.indices]);
+    geometry.setIndex(new THREE.BufferAttribute(data.indices, 1));
 
     return geometry;
   },
