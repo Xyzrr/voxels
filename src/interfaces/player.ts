@@ -10,6 +10,9 @@ export interface Player {
   movingLeft: boolean;
   movingRight: boolean;
 
+  flyingUp: boolean;
+  flyingDown: boolean;
+
   startMovingForward?(): void;
   stopMovingForward?(): void;
   startMovingBackward?(): void;
@@ -27,6 +30,9 @@ export interface Player {
 export interface PlayerInterface {
   init(): Player;
   bindToUserControls(player: Player): void;
+
+  setFlyingUp(player: Player, value: boolean): void;
+  setFlyingDown(player: Player, value: boolean): void;
 }
 
 export const Player: PlayerInterface = {
@@ -39,6 +45,8 @@ export const Player: PlayerInterface = {
       movingBackward: false,
       movingLeft: false,
       movingRight: false,
+      flyingUp: false,
+      flyingDown: false,
 
       startMovingForward() {
         player.movingForward = true;
@@ -84,7 +92,6 @@ export const Player: PlayerInterface = {
               new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
             )
           );
-          console.log(delta * player.moveSpeed * 60);
         }
 
         if (player.movingBackward) {
@@ -110,10 +117,26 @@ export const Player: PlayerInterface = {
             )
           );
         }
+
+        if (player.flyingUp) {
+          player.position.add(new Vector3(0, delta * player.moveSpeed, 0));
+        }
+
+        if (player.flyingDown) {
+          player.position.sub(new Vector3(0, delta * player.moveSpeed, 0));
+        }
       },
     };
 
     return player;
+  },
+
+  setFlyingUp(player, value) {
+    player.flyingUp = value;
+  },
+
+  setFlyingDown(player, value) {
+    player.flyingDown = value;
   },
 
   bindToUserControls(player) {
@@ -137,6 +160,16 @@ export const Player: PlayerInterface = {
         player.startMovingRight?.();
         return;
       }
+
+      if (e.key === ' ') {
+        Player.setFlyingUp(player, true);
+        return;
+      }
+
+      if (e.key === 'Shift') {
+        Player.setFlyingDown(player, true);
+        return;
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -157,6 +190,16 @@ export const Player: PlayerInterface = {
 
       if (e.key === 'ArrowRight' || e.key === 'd') {
         player.stopMovingRight?.();
+        return;
+      }
+
+      if (e.key === ' ') {
+        Player.setFlyingUp(player, false);
+        return;
+      }
+
+      if (e.key === 'Shift') {
+        Player.setFlyingDown(player, false);
         return;
       }
     });
