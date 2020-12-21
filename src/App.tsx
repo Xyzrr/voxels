@@ -4,6 +4,7 @@ import React from 'react';
 import {VoxelRenderer} from './interfaces/renderer';
 import {VoxelWorld} from './interfaces/world';
 import {Player} from './interfaces/player';
+import {Physics} from './interfaces/physics';
 
 (window as any).VoxelRenderer = VoxelRenderer;
 (window as any).VoxelWorld = VoxelWorld;
@@ -17,9 +18,11 @@ const App: React.FC = React.memo(() => {
       const renderer = VoxelRenderer.init();
       VoxelRenderer.setWorld(renderer, world);
 
+      const physics = Physics.init(world);
+
       const player = Player.init();
       Player.bindToUserControls(player);
-      Player.setWorld(player, world);
+      Player.setPhysics(player, physics);
       VoxelRenderer.setPlayer(renderer, player);
 
       VoxelRenderer.bindToElement(renderer, container);

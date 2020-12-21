@@ -1,4 +1,5 @@
 import {Box3, BoxBufferGeometry, Euler, Vector3} from 'three';
+import {Physics} from './physics';
 import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
 
@@ -11,7 +12,7 @@ export interface Player {
   rotation: Euler;
   moveSpeed: number;
   boundingBox: Box3;
-  world?: VoxelWorld;
+  physics?: Physics;
 
   flying: boolean;
 
@@ -31,7 +32,7 @@ export interface Player {
 export interface PlayerInterface {
   init(): Player;
 
-  setWorld(player: Player, world: VoxelWorld): void;
+  setPhysics(player: Player, physics: Physics): void;
   setFlyingForward(player: Player, value: boolean): void;
   setFlyingBackward(player: Player, value: boolean): void;
   setFlyingLeft(player: Player, value: boolean): void;
@@ -63,11 +64,11 @@ export const Player: PlayerInterface = {
 
       yVelocity: 0,
 
-      update(delta) {
+      update(deltaTime) {
         if (player.flying) {
           if (player.flyingForward) {
             player.position.sub(
-              new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+              new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
                 new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
               )
             );
@@ -75,7 +76,7 @@ export const Player: PlayerInterface = {
 
           if (player.flyingBackward) {
             player.position.add(
-              new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+              new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
                 new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
               )
             );
@@ -83,7 +84,7 @@ export const Player: PlayerInterface = {
 
           if (player.flyingLeft) {
             player.position.sub(
-              new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+              new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
                 player.rotation
               )
             );
@@ -91,58 +92,35 @@ export const Player: PlayerInterface = {
 
           if (player.flyingRight) {
             player.position.add(
-              new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+              new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
                 player.rotation
               )
             );
           }
 
           if (player.flyingUp) {
-            player.position.add(new Vector3(0, delta * player.moveSpeed, 0));
+            player.position.add(
+              new Vector3(0, deltaTime * player.moveSpeed, 0)
+            );
           }
 
           if (player.flyingDown) {
-            player.position.sub(new Vector3(0, delta * player.moveSpeed, 0));
+            player.position.sub(
+              new Vector3(0, deltaTime * player.moveSpeed, 0)
+            );
           }
         } else {
-          player.yVelocity -= delta * GRAVITY;
-          let deltaY = delta * player.yVelocity;
-
-          if (player.world != null) {
-            const xx = Math.floor(player.position.x);
-            const zz = Math.floor(player.position.z);
-            const yBottom = player.position.y;
-            for (
-              let yy = Math.floor(yBottom + 0.01) - 1;
-              yy + 1 > yBottom + deltaY;
-              yy--
-            ) {
-              const voxel = VoxelWorld.getVoxel(player.world, {
-                x: xx,
-                y: yy,
-                z: zz,
-              });
-              if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
-                console.log(
-                  'detecting ground at',
-                  yy + 1,
-                  'player at',
-                  yBottom,
-                  'changing',
-                  deltaY,
-                  'to',
-                  yy + 1 - yBottom
-                );
-                deltaY = Math.max(deltaY, yy + 1 - yBottom);
-                player.yVelocity = 0;
-              }
-            }
+          if (player.physics != null) {
+            player.yVelocity -= deltaTime * GRAVITY;
+            let deltaY = deltaTime * player.yVelocity;
+            const delta = Physics.getCappedDelta(
+              player.physics,
+              player.position,
+              player.boundingBox,
+              new Vector3(0, deltaY, 0)
+            );
+            player.position.add(delta);
           }
-
-          console.log('deltaY', deltaY);
-
-          player.position.add(new Vector3(0, deltaY, 0));
-          console.log('changing position', player.position.y);
         }
       },
     };
@@ -150,8 +128,8 @@ export const Player: PlayerInterface = {
     return player;
   },
 
-  setWorld(player, world) {
-    player.world = world;
+  setPhysics(player, physics) {
+    player.physics = physics;
   },
 
   setFlyingForward(player, value) {
