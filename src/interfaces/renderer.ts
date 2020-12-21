@@ -120,7 +120,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
   },
 
   setPlayer(renderer, player) {
-    const {update, rotate} = player;
+    const {update, onRotate} = player;
 
     player.update = (delta) => {
       update(delta);
@@ -131,8 +131,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
       );
     };
 
-    player.rotate = (deltaX, deltaY) => {
-      rotate(deltaX, deltaY);
+    player.onRotate = () => {
+      onRotate?.();
       renderer.camera.quaternion.setFromEuler(player.rotation);
     };
 

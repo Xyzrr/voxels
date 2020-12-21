@@ -13,13 +13,12 @@ export interface Player {
   flyingUp: boolean;
   flyingDown: boolean;
 
-  rotate(deltaX: number, deltaY: number): void;
+  onRotate?(): void;
   update(delta: number): void;
 }
 
 export interface PlayerInterface {
   init(): Player;
-  bindToUserControls(player: Player): void;
 
   setFlyingForward(player: Player, value: boolean): void;
   setFlyingBackward(player: Player, value: boolean): void;
@@ -27,6 +26,9 @@ export interface PlayerInterface {
   setFlyingRight(player: Player, value: boolean): void;
   setFlyingUp(player: Player, value: boolean): void;
   setFlyingDown(player: Player, value: boolean): void;
+  rotate(player: Player, deltaX: number, deltaY: number): void;
+
+  bindToUserControls(player: Player): void;
 }
 
 export const Player: PlayerInterface = {
@@ -41,11 +43,6 @@ export const Player: PlayerInterface = {
       movingRight: false,
       flyingUp: false,
       flyingDown: false,
-
-      rotate(deltaX, deltaY) {
-        player.rotation.x += deltaX;
-        player.rotation.y += deltaY;
-      },
 
       update(delta) {
         if (player.movingForward) {
@@ -117,6 +114,12 @@ export const Player: PlayerInterface = {
     player.flyingDown = value;
   },
 
+  rotate(player, deltaX, deltaY) {
+    player.rotation.x += deltaX;
+    player.rotation.y += deltaY;
+    player.onRotate?.();
+  },
+
   bindToUserControls(player) {
     window.addEventListener('keydown', (e) => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
@@ -183,7 +186,7 @@ export const Player: PlayerInterface = {
     });
 
     window.addEventListener('mousemove', (e) => {
-      player.rotate(-e.movementY * 0.005, -e.movementX * 0.005);
+      Player.rotate(player, -e.movementY * 0.005, -e.movementX * 0.005);
     });
   },
 };
