@@ -4,7 +4,9 @@ import {CHUNK_SIZE} from '../lib/consts';
 import {Voxel} from '../interfaces/voxel';
 
 function computeVoxel(coord: Coord): Voxel {
-  const height = simplex2(coord.x / 64, coord.z / 64) * 8;
+  const height =
+    simplex2(coord.x / 94, coord.z / 94) * 5 +
+    simplex2(coord.x / 100, coord.z / 100) * 4;
   if (coord.y <= height) {
     return Voxel.dirt;
   }
