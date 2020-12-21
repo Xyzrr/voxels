@@ -13,17 +13,7 @@ export interface Player {
   flyingUp: boolean;
   flyingDown: boolean;
 
-  startMovingForward?(): void;
-  stopMovingForward?(): void;
-  startMovingBackward?(): void;
-  stopMovingBackward?(): void;
-  startMovingLeft?(): void;
-  stopMovingLeft?(): void;
-  startMovingRight?(): void;
-  stopMovingRight?(): void;
-
   rotate(deltaX: number, deltaY: number): void;
-
   update(delta: number): void;
 }
 
@@ -31,6 +21,10 @@ export interface PlayerInterface {
   init(): Player;
   bindToUserControls(player: Player): void;
 
+  setFlyingForward(player: Player, value: boolean): void;
+  setFlyingBackward(player: Player, value: boolean): void;
+  setFlyingLeft(player: Player, value: boolean): void;
+  setFlyingRight(player: Player, value: boolean): void;
   setFlyingUp(player: Player, value: boolean): void;
   setFlyingDown(player: Player, value: boolean): void;
 }
@@ -47,38 +41,6 @@ export const Player: PlayerInterface = {
       movingRight: false,
       flyingUp: false,
       flyingDown: false,
-
-      startMovingForward() {
-        player.movingForward = true;
-      },
-
-      stopMovingForward() {
-        player.movingForward = false;
-      },
-
-      startMovingBackward() {
-        player.movingBackward = true;
-      },
-
-      stopMovingBackward() {
-        player.movingBackward = false;
-      },
-
-      startMovingLeft() {
-        player.movingLeft = true;
-      },
-
-      stopMovingLeft() {
-        player.movingLeft = false;
-      },
-
-      startMovingRight() {
-        player.movingRight = true;
-      },
-
-      stopMovingRight() {
-        player.movingRight = false;
-      },
 
       rotate(deltaX, deltaY) {
         player.rotation.x += deltaX;
@@ -131,6 +93,22 @@ export const Player: PlayerInterface = {
     return player;
   },
 
+  setFlyingForward(player, value) {
+    player.movingForward = value;
+  },
+
+  setFlyingBackward(player, value) {
+    player.movingBackward = value;
+  },
+
+  setFlyingLeft(player, value) {
+    player.movingLeft = value;
+  },
+
+  setFlyingRight(player, value) {
+    player.movingRight = value;
+  },
+
   setFlyingUp(player, value) {
     player.flyingUp = value;
   },
@@ -141,23 +119,23 @@ export const Player: PlayerInterface = {
 
   bindToUserControls(player) {
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'w') {
-        player.startMovingForward?.();
+      if (['ArrowUp', 'w', 'W'].includes(e.key)) {
+        Player.setFlyingForward(player, true);
         return;
       }
 
-      if (e.key === 'ArrowDown' || e.key === 's') {
-        player.startMovingBackward?.();
+      if (['ArrowDown', 's', 'S'].includes(e.key)) {
+        Player.setFlyingBackward(player, true);
         return;
       }
 
-      if (e.key === 'ArrowLeft' || e.key === 'a') {
-        player.startMovingLeft?.();
+      if (['ArrowLeft', 'a', 'A'].includes(e.key)) {
+        Player.setFlyingLeft(player, true);
         return;
       }
 
-      if (e.key === 'ArrowRight' || e.key === 'd') {
-        player.startMovingRight?.();
+      if (['ArrowRight', 'd', 'D'].includes(e.key)) {
+        Player.setFlyingRight(player, true);
         return;
       }
 
@@ -173,23 +151,23 @@ export const Player: PlayerInterface = {
     });
 
     window.addEventListener('keyup', (e) => {
-      if (e.key === 'ArrowUp' || e.key === 'w') {
-        player.stopMovingForward?.();
+      if (['ArrowUp', 'w', 'W'].includes(e.key)) {
+        Player.setFlyingForward(player, false);
         return;
       }
 
-      if (e.key === 'ArrowDown' || e.key === 's') {
-        player.stopMovingBackward?.();
+      if (['ArrowDown', 's', 'S'].includes(e.key)) {
+        Player.setFlyingBackward(player, false);
         return;
       }
 
-      if (e.key === 'ArrowLeft' || e.key === 'a') {
-        player.stopMovingLeft?.();
+      if (['ArrowLeft', 'a', 'A'].includes(e.key)) {
+        Player.setFlyingLeft(player, false);
         return;
       }
 
-      if (e.key === 'ArrowRight' || e.key === 'd') {
-        player.stopMovingRight?.();
+      if (['ArrowRight', 'd', 'D'].includes(e.key)) {
+        Player.setFlyingRight(player, false);
         return;
       }
 
