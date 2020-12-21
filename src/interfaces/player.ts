@@ -81,7 +81,7 @@ export const Player: PlayerInterface = {
         if (player.movingForward) {
           player.position.sub(
             new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
-              player.rotation
+              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
             )
           );
           console.log(delta * player.moveSpeed * 60);
@@ -90,7 +90,7 @@ export const Player: PlayerInterface = {
         if (player.movingBackward) {
           player.position.add(
             new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
-              player.rotation
+              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
             )
           );
         }
