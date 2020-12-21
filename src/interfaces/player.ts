@@ -44,7 +44,7 @@ export const Player: PlayerInterface = {
     const player: Player = {
       position: new Vector3(5, 15, 30),
       rotation: new Euler(0, 0, 0, 'YXZ'),
-      moveSpeed: 20,
+      moveSpeed: 50,
 
       flying: true,
 
