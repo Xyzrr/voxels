@@ -5,11 +5,10 @@ export interface Player {
   rotation: Euler;
   moveSpeed: number;
 
-  movingForward: boolean;
-  movingBackward: boolean;
-  movingLeft: boolean;
-  movingRight: boolean;
-
+  flyingForward: boolean;
+  flyingBackward: boolean;
+  flyingLeft: boolean;
+  flyingRight: boolean;
   flyingUp: boolean;
   flyingDown: boolean;
 
@@ -37,15 +36,15 @@ export const Player: PlayerInterface = {
       position: new Vector3(5, 15, 30),
       rotation: new Euler(0, 0, 0, 'YXZ'),
       moveSpeed: 20,
-      movingForward: false,
-      movingBackward: false,
-      movingLeft: false,
-      movingRight: false,
+      flyingForward: false,
+      flyingBackward: false,
+      flyingLeft: false,
+      flyingRight: false,
       flyingUp: false,
       flyingDown: false,
 
       update(delta) {
-        if (player.movingForward) {
+        if (player.flyingForward) {
           player.position.sub(
             new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
               new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
@@ -53,7 +52,7 @@ export const Player: PlayerInterface = {
           );
         }
 
-        if (player.movingBackward) {
+        if (player.flyingBackward) {
           player.position.add(
             new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
               new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
@@ -61,7 +60,7 @@ export const Player: PlayerInterface = {
           );
         }
 
-        if (player.movingLeft) {
+        if (player.flyingLeft) {
           player.position.sub(
             new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
               player.rotation
@@ -69,7 +68,7 @@ export const Player: PlayerInterface = {
           );
         }
 
-        if (player.movingRight) {
+        if (player.flyingRight) {
           player.position.add(
             new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
               player.rotation
@@ -91,19 +90,19 @@ export const Player: PlayerInterface = {
   },
 
   setFlyingForward(player, value) {
-    player.movingForward = value;
+    player.flyingForward = value;
   },
 
   setFlyingBackward(player, value) {
-    player.movingBackward = value;
+    player.flyingBackward = value;
   },
 
   setFlyingLeft(player, value) {
-    player.movingLeft = value;
+    player.flyingLeft = value;
   },
 
   setFlyingRight(player, value) {
-    player.movingRight = value;
+    player.flyingRight = value;
   },
 
   setFlyingUp(player, value) {
