@@ -29,6 +29,7 @@ const App: React.FC = React.memo(() => {
 
       return () => {
         VoxelRenderer.unbindFromElement(renderer, container);
+        Player.unbindFromUserControls(player);
       };
     }
   }, [container]);

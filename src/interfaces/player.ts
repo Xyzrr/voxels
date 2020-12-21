@@ -2,6 +2,8 @@ import {Euler, Vector3} from 'three';
 
 const GRAVITY = 9.8;
 
+const PLAYER_TO_EVENT_LISTENER: WeakMap<Player, any> = new WeakMap();
+
 export interface Player {
   position: Vector3;
   rotation: Euler;
@@ -34,6 +36,7 @@ export interface PlayerInterface {
   setRotation(player: Player, euler: Euler): void;
 
   bindToUserControls(player: Player): void;
+  unbindFromUserControls(player: Player): void;
 }
 
 export const Player: PlayerInterface = {
@@ -135,7 +138,7 @@ export const Player: PlayerInterface = {
   },
 
   bindToUserControls(player) {
-    window.addEventListener('keydown', (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
         Player.setFlyingForward(player, true);
         return;
@@ -165,9 +168,9 @@ export const Player: PlayerInterface = {
         Player.setFlyingDown(player, true);
         return;
       }
-    });
+    };
 
-    window.addEventListener('keyup', (e) => {
+    const onKeyUp = (e: KeyboardEvent) => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
         Player.setFlyingForward(player, false);
         return;
@@ -197,17 +200,42 @@ export const Player: PlayerInterface = {
         Player.setFlyingDown(player, false);
         return;
       }
-    });
+    };
 
-    window.addEventListener('mousemove', (e) => {
+    const onMouseMove = (e: MouseEvent) => {
       Player.setRotation(
         player,
         new Euler(
-          Math.max(Math.min(player.rotation.x - e.movementY * 0.005, 1), -1),
+          Math.max(
+            Math.min(player.rotation.x - e.movementY * 0.005, 1.57),
+            -1.57
+          ),
           player.rotation.y - e.movementX * 0.005,
           player.rotation.z
         )
       );
-    });
+    };
+
+    PLAYER_TO_EVENT_LISTENER.set(player, {onKeyDown, onKeyUp, onMouseMove});
+
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('mousemove', onMouseMove);
+  },
+
+  unbindFromUserControls(player) {
+    window.removeEventListener(
+      'keyup',
+      PLAYER_TO_EVENT_LISTENER.get(player).onKeyUp
+    );
+    window.removeEventListener(
+      'keydown',
+
+      PLAYER_TO_EVENT_LISTENER.get(player).onKeyDown
+    );
+    window.removeEventListener(
+      'mousemove',
+      PLAYER_TO_EVENT_LISTENER.get(player).onMouseMove
+    );
   },
 };
