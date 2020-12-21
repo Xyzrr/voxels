@@ -31,7 +31,7 @@ export interface PlayerInterface {
   setFlyingRight(player: Player, value: boolean): void;
   setFlyingUp(player: Player, value: boolean): void;
   setFlyingDown(player: Player, value: boolean): void;
-  rotate(player: Player, deltaX: number, deltaY: number): void;
+  setRotation(player: Player, euler: Euler): void;
 
   bindToUserControls(player: Player): void;
 }
@@ -43,7 +43,7 @@ export const Player: PlayerInterface = {
       rotation: new Euler(0, 0, 0, 'YXZ'),
       moveSpeed: 20,
 
-      flying: false,
+      flying: true,
 
       flyingForward: false,
       flyingBackward: false,
@@ -129,9 +129,8 @@ export const Player: PlayerInterface = {
     player.flyingDown = value;
   },
 
-  rotate(player, deltaX, deltaY) {
-    player.rotation.x += deltaX;
-    player.rotation.y += deltaY;
+  setRotation(player, euler) {
+    player.rotation.set(euler.x, euler.y, euler.z);
     player.onRotate?.();
   },
 
@@ -201,7 +200,18 @@ export const Player: PlayerInterface = {
     });
 
     window.addEventListener('mousemove', (e) => {
-      Player.rotate(player, -e.movementY * 0.005, -e.movementX * 0.005);
+      console.log('rotation', player.rotation.y);
+      Player.setRotation(
+        player,
+        new Euler(
+          Math.max(
+            Math.min(player.rotation.x - e.movementY * 0.005, 0.8),
+            -0.8
+          ),
+          player.rotation.y - e.movementX * 0.005,
+          player.rotation.z
+        )
+      );
     });
   },
 };
