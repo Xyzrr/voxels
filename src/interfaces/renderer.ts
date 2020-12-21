@@ -60,7 +60,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     texture.minFilter = THREE.NearestFilter;
 
     const renderer: VoxelRenderer = {
-      lastFrameTime: Date.now(),
+      lastFrameTime: Date.now() / 1000,
       texture,
 
       camera: (() => {

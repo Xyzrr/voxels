@@ -1,9 +1,13 @@
 import {Euler, Vector3} from 'three';
 
+const GRAVITY = 9.8;
+
 export interface Player {
   position: Vector3;
   rotation: Euler;
   moveSpeed: number;
+
+  flying: boolean;
 
   flyingForward: boolean;
   flyingBackward: boolean;
@@ -11,6 +15,8 @@ export interface Player {
   flyingRight: boolean;
   flyingUp: boolean;
   flyingDown: boolean;
+
+  yVelocity: number;
 
   onRotate?(): void;
   update(delta: number): void;
@@ -36,6 +42,9 @@ export const Player: PlayerInterface = {
       position: new Vector3(5, 15, 30),
       rotation: new Euler(0, 0, 0, 'YXZ'),
       moveSpeed: 20,
+
+      flying: false,
+
       flyingForward: false,
       flyingBackward: false,
       flyingLeft: false,
@@ -43,45 +52,52 @@ export const Player: PlayerInterface = {
       flyingUp: false,
       flyingDown: false,
 
+      yVelocity: 0,
+
       update(delta) {
-        if (player.flyingForward) {
-          player.position.sub(
-            new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
-              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-            )
-          );
-        }
+        if (player.flying) {
+          if (player.flyingForward) {
+            player.position.sub(
+              new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+                new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
+              )
+            );
+          }
 
-        if (player.flyingBackward) {
-          player.position.add(
-            new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
-              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-            )
-          );
-        }
+          if (player.flyingBackward) {
+            player.position.add(
+              new Vector3(0, 0, delta * player.moveSpeed).applyEuler(
+                new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
+              )
+            );
+          }
 
-        if (player.flyingLeft) {
-          player.position.sub(
-            new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
-              player.rotation
-            )
-          );
-        }
+          if (player.flyingLeft) {
+            player.position.sub(
+              new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+                player.rotation
+              )
+            );
+          }
 
-        if (player.flyingRight) {
-          player.position.add(
-            new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
-              player.rotation
-            )
-          );
-        }
+          if (player.flyingRight) {
+            player.position.add(
+              new Vector3(delta * player.moveSpeed, 0, 0).applyEuler(
+                player.rotation
+              )
+            );
+          }
 
-        if (player.flyingUp) {
-          player.position.add(new Vector3(0, delta * player.moveSpeed, 0));
-        }
+          if (player.flyingUp) {
+            player.position.add(new Vector3(0, delta * player.moveSpeed, 0));
+          }
 
-        if (player.flyingDown) {
-          player.position.sub(new Vector3(0, delta * player.moveSpeed, 0));
+          if (player.flyingDown) {
+            player.position.sub(new Vector3(0, delta * player.moveSpeed, 0));
+          }
+        } else {
+          player.yVelocity -= delta * GRAVITY;
+          player.position.add(new Vector3(0, delta * player.yVelocity, 0));
         }
       },
     };
