@@ -126,7 +126,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
       update(delta);
       renderer.camera.position.set(
         player.position.x,
-        player.position.y,
+        player.position.y + 1.5,
         player.position.z
       );
     };

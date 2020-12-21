@@ -19,6 +19,7 @@ const App: React.FC = React.memo(() => {
 
       const player = Player.init();
       Player.bindToUserControls(player);
+      Player.setWorld(player, world);
       VoxelRenderer.setPlayer(renderer, player);
 
       VoxelRenderer.bindToElement(renderer, container);
