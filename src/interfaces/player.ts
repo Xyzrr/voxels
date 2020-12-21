@@ -200,14 +200,10 @@ export const Player: PlayerInterface = {
     });
 
     window.addEventListener('mousemove', (e) => {
-      console.log('rotation', player.rotation.y);
       Player.setRotation(
         player,
         new Euler(
-          Math.max(
-            Math.min(player.rotation.x - e.movementY * 0.005, 0.8),
-            -0.8
-          ),
+          Math.max(Math.min(player.rotation.x - e.movementY * 0.005, 1), -1),
           player.rotation.y - e.movementX * 0.005,
           player.rotation.z
         )
