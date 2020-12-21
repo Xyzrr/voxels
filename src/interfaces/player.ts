@@ -138,7 +138,7 @@ export const Player: PlayerInterface = {
   },
 
   bindToUserControls(player) {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent): void => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
         Player.setFlyingForward(player, true);
         return;
@@ -170,7 +170,7 @@ export const Player: PlayerInterface = {
       }
     };
 
-    const onKeyUp = (e: KeyboardEvent) => {
+    const onKeyUp = (e: KeyboardEvent): void => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
         Player.setFlyingForward(player, false);
         return;
@@ -202,7 +202,7 @@ export const Player: PlayerInterface = {
       }
     };
 
-    const onMouseMove = (e: MouseEvent) => {
+    const onMouseMove = (e: MouseEvent): void => {
       Player.setRotation(
         player,
         new Euler(
