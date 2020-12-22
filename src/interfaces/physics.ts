@@ -35,18 +35,31 @@ export const Physics: PhysicsInterface = {
     let cappedDelta = delta;
     let collided = false;
 
+    let axis1: 'x' | 'y' | 'z' = 'x';
+    let axis2: 'x' | 'y' | 'z' = 'z';
+
+    if (direction === 'x') {
+      axis1 = 'y';
+      axis2 = 'z';
+    }
+
+    if (direction === 'z') {
+      axis1 = 'y';
+      axis2 = 'x';
+    }
+
     for (
-      let xx = Math.floor(position.x);
-      xx < position.x + boundingBox.max.x;
+      let xx = Math.floor(position[axis1]);
+      xx < position[axis1] + boundingBox.max[axis1];
       xx++
     ) {
       for (
-        let zz = Math.floor(position.z);
-        zz < position.z + boundingBox.max.z;
+        let zz = Math.floor(position[axis2]);
+        zz < position[axis2] + boundingBox.max[axis2];
         zz++
       ) {
         if (delta > 0) {
-          const topY = position.y + boundingBox.max.y;
+          const topY = position[direction] + boundingBox.max[direction];
           for (let yy = Math.ceil(topY - 0.01); yy < topY + delta; yy++) {
             const voxel = VoxelWorld.getVoxel(physics.world, {
               x: xx,
@@ -62,8 +75,8 @@ export const Physics: PhysicsInterface = {
           }
         } else {
           for (
-            let yy = Math.floor(position.y + 0.01) - 1;
-            yy + 1 > position.y + delta;
+            let yy = Math.floor(position[direction] + 0.01) - 1;
+            yy + 1 > position[direction] + delta;
             yy--
           ) {
             const voxel = VoxelWorld.getVoxel(physics.world, {
@@ -72,8 +85,8 @@ export const Physics: PhysicsInterface = {
               z: zz,
             });
             if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
-              if (cappedDelta < yy + 1 - position.y) {
-                cappedDelta = yy + 1 - position.y;
+              if (cappedDelta < yy + 1 - position[direction]) {
+                cappedDelta = yy + 1 - position[direction];
                 collided = true;
               }
             }
