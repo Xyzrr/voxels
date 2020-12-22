@@ -33,6 +33,8 @@ export interface PlayerInterface {
   init(): Player;
 
   setPhysics(player: Player, physics: Physics): void;
+
+  jump(player: Player): void;
   setMovingForward(player: Player, value: boolean): void;
   setMovingBackward(player: Player, value: boolean): void;
   setMovingLeft(player: Player, value: boolean): void;
@@ -136,6 +138,10 @@ export const Player: PlayerInterface = {
     player.physics = physics;
   },
 
+  jump(player) {
+    player.yVelocity = 5;
+  },
+
   setMovingForward(player, value) {
     player.movingForward = value;
   },
@@ -190,7 +196,7 @@ export const Player: PlayerInterface = {
       if (e.key === ' ') {
         Player.setFlyingUp(player, true);
         if (!player.flying) {
-          player.yVelocity = 5;
+          Player.jump(player);
         }
         return;
       }
