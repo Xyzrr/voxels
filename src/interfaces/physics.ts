@@ -13,6 +13,7 @@ export interface PhysicsInterface {
     physics: Physics,
     position: Vector3,
     boundingBox: Box3,
+    direction: 'x' | 'y' | 'z',
     delta: number
   ): {cappedDelta: number; collided: boolean};
   getCappedDelta3(
@@ -30,7 +31,7 @@ export const Physics: PhysicsInterface = {
     };
   },
 
-  getCappedDelta(physics, position, boundingBox, delta) {
+  getCappedDelta(physics, position, boundingBox, direction, delta) {
     let cappedDelta = delta;
     let collided = false;
 
@@ -85,15 +86,24 @@ export const Physics: PhysicsInterface = {
   },
 
   getCappedDelta3(physics, position, boundingBox, delta) {
-    const {cappedDelta: cappedDeltaY, collided} = Physics.getCappedDelta(
-      physics,
-      position,
-      boundingBox,
-      delta.y
-    );
+    const {
+      cappedDelta: cappedDeltaX,
+      collided: collidedX,
+    } = Physics.getCappedDelta(physics, position, boundingBox, 'x', delta.x);
+    const {
+      cappedDelta: cappedDeltaY,
+      collided: collidedY,
+    } = Physics.getCappedDelta(physics, position, boundingBox, 'y', delta.y);
+    const {
+      cappedDelta: cappedDeltaZ,
+      collided: collidedZ,
+    } = Physics.getCappedDelta(physics, position, boundingBox, 'z', delta.z);
 
     // console.log('collided', collided);
 
-    return {cappedDelta: new Vector3(0, cappedDeltaY, 0), collided};
+    return {
+      cappedDelta: new Vector3(cappedDeltaX, cappedDeltaY, cappedDeltaZ),
+      collided: collidedX || collidedY || collidedZ,
+    };
   },
 };
