@@ -69,11 +69,22 @@ export const Player: PlayerInterface = {
 
       update(deltaTime) {
         if (player.movingForward) {
-          player.position.sub(
-            new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
+          if (player.physics != null) {
+            const rawDelta = new Vector3(
+              0,
+              0,
+              -deltaTime * player.moveSpeed
+            ).applyEuler(
               new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-            )
-          );
+            );
+            const {cappedDelta, collided} = Physics.getCappedDelta3(
+              player.physics,
+              player.position,
+              player.boundingBox,
+              rawDelta
+            );
+            player.position.add(cappedDelta);
+          }
         }
 
         if (player.movingBackward) {

@@ -61,11 +61,11 @@ export const Physics: PhysicsInterface = {
         if (delta > 0) {
           const topY = position[direction] + boundingBox.max[direction];
           for (let yy = Math.ceil(topY - 0.01); yy < topY + delta; yy++) {
-            const voxel = VoxelWorld.getVoxel(physics.world, {
-              x: xx,
-              y: yy,
-              z: zz,
-            });
+            const voxel = VoxelWorld.getVoxel(physics.world, ({
+              [axis1]: xx,
+              [direction]: yy,
+              [axis2]: zz,
+            } as unknown) as Coord);
             if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
               if (cappedDelta > yy - topY) {
                 cappedDelta = yy - topY;
@@ -79,11 +79,11 @@ export const Physics: PhysicsInterface = {
             yy + 1 > position[direction] + delta;
             yy--
           ) {
-            const voxel = VoxelWorld.getVoxel(physics.world, {
-              x: xx,
-              y: yy,
-              z: zz,
-            });
+            const voxel = VoxelWorld.getVoxel(physics.world, ({
+              [axis1]: xx,
+              [direction]: yy,
+              [axis2]: zz,
+            } as unknown) as Coord);
             if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
               if (cappedDelta < yy + 1 - position[direction]) {
                 cappedDelta = yy + 1 - position[direction];
