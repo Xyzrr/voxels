@@ -122,8 +122,27 @@ export const VoxelRenderer: VoxelRendererInterface = {
   setPlayer(renderer, player) {
     const {update, onRotate} = player;
 
+    const geometry = new THREE.BoxBufferGeometry(
+      player.boundingBox.max.x,
+      player.boundingBox.max.y,
+      player.boundingBox.max.z
+    );
+    const wireframe = new THREE.WireframeGeometry(geometry);
+    const line = new THREE.LineSegments(wireframe);
+    renderer.scene.add(line);
+    if (!Array.isArray(line.material)) {
+      line.material.depthTest = false;
+      line.material.opacity = 0.25;
+      line.material.transparent = true;
+    }
+
     player.update = (delta) => {
       update(delta);
+      line.position.set(
+        player.position.x,
+        player.position.y,
+        player.position.z
+      );
       renderer.camera.position.set(
         player.position.x,
         player.position.y + 1.5,
