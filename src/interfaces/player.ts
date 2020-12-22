@@ -114,13 +114,16 @@ export const Player: PlayerInterface = {
           if (player.physics != null) {
             player.yVelocity -= deltaTime * GRAVITY;
             let deltaY = deltaTime * player.yVelocity;
-            const delta = Physics.getCappedDelta(
+            const {cappedDelta, collided} = Physics.getCappedDelta(
               player.physics,
               player.position,
               player.boundingBox,
               new Vector3(0, deltaY, 0)
             );
-            player.position.add(delta);
+            player.position.add(cappedDelta);
+            if (collided) {
+              player.yVelocity = 0;
+            }
           }
         }
       },

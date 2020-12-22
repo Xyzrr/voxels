@@ -13,7 +13,7 @@ export interface PhysicsInterface {
     position: Vector3,
     boundingBox: Box3,
     delta: Vector3
-  ): Vector3;
+  ): {cappedDelta: Vector3; collided: boolean};
 }
 
 export const Physics: PhysicsInterface = {
@@ -24,6 +24,8 @@ export const Physics: PhysicsInterface = {
   },
 
   getCappedDelta(physics, position, boundingBox, delta) {
+    let collided = false;
+
     const xx = Math.floor(position.x);
     const zz = Math.floor(position.z);
     const yBottom = position.y;
@@ -50,10 +52,13 @@ export const Physics: PhysicsInterface = {
           'to',
           yy + 1 - yBottom
         );
-        deltaY = Math.max(deltaY, yy + 1 - yBottom);
+        if (deltaY < yy + 1 - yBottom) {
+          deltaY = yy + 1 - yBottom;
+          collided = true;
+        }
       }
     }
 
-    return new Vector3(0, deltaY, 0);
+    return {cappedDelta: new Vector3(0, deltaY, 0), collided};
   },
 };
