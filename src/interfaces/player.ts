@@ -189,6 +189,9 @@ export const Player: PlayerInterface = {
 
       if (e.key === ' ') {
         Player.setFlyingUp(player, true);
+        if (!player.flying) {
+          player.yVelocity = 5;
+        }
         return;
       }
 
