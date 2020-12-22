@@ -13,8 +13,14 @@ export interface PhysicsInterface {
     physics: Physics,
     position: Vector3,
     boundingBox: Box3,
+    delta: number
+  ): {cappedDelta: number; collided: boolean};
+  getCappedDelta3(
+    physics: Physics,
+    position: Vector3,
+    boundingBox: Box3,
     delta: Vector3
-  ): {cappedDelta: Vector3; collided: Coord | null};
+  ): {cappedDelta: Vector3; collided: boolean};
 }
 
 export const Physics: PhysicsInterface = {
@@ -25,43 +31,52 @@ export const Physics: PhysicsInterface = {
   },
 
   getCappedDelta(physics, position, boundingBox, delta) {
-    let collided = null;
+    let cappedDelta = delta;
+    let collided = false;
 
-    const xx = Math.floor(position.x);
-    const zz = Math.floor(position.z);
-    const yBottom = position.y;
-
-    let deltaY = delta.y;
     for (
-      let yy = Math.floor(yBottom + 0.01) - 1;
-      yy + 1 > yBottom + deltaY;
-      yy--
+      let xx = Math.floor(position.x);
+      xx < position.x + boundingBox.max.x;
+      xx++
     ) {
-      const voxel = VoxelWorld.getVoxel(physics.world, {
-        x: xx,
-        y: yy,
-        z: zz,
-      });
-      if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
-        // console.log(
-        //   'detecting ground at',
-        //   yy + 1,
-        //   'player at',
-        //   yBottom,
-        //   'changing',
-        //   deltaY,
-        //   'to',
-        //   yy + 1 - yBottom
-        // );
-        if (deltaY < yy + 1 - yBottom) {
-          deltaY = yy + 1 - yBottom;
-          collided = {x: xx, y: yy, z: zz};
+      for (
+        let zz = Math.floor(position.z);
+        zz < position.z + boundingBox.max.z;
+        zz++
+      ) {
+        for (
+          let yy = Math.floor(position.y + 0.01) - 1;
+          yy + 1 > position.y + delta;
+          yy--
+        ) {
+          const voxel = VoxelWorld.getVoxel(physics.world, {
+            x: xx,
+            y: yy,
+            z: zz,
+          });
+          if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
+            if (cappedDelta < yy + 1 - position.y) {
+              cappedDelta = yy + 1 - position.y;
+              collided = true;
+            }
+          }
         }
       }
     }
 
+    return {cappedDelta, collided};
+  },
+
+  getCappedDelta3(physics, position, boundingBox, delta) {
+    const {cappedDelta: cappedDeltaY, collided} = Physics.getCappedDelta(
+      physics,
+      position,
+      boundingBox,
+      delta.y
+    );
+
     // console.log('collided', collided);
 
-    return {cappedDelta: new Vector3(0, deltaY, 0), collided};
+    return {cappedDelta: new Vector3(0, cappedDeltaY, 0), collided};
   },
 };
