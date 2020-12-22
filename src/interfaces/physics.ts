@@ -1,4 +1,5 @@
 import {Box3, Vector3} from 'three';
+import {Coord} from './coord';
 import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
 
@@ -13,7 +14,7 @@ export interface PhysicsInterface {
     position: Vector3,
     boundingBox: Box3,
     delta: Vector3
-  ): {cappedDelta: Vector3; collided: boolean};
+  ): {cappedDelta: Vector3; collided: Coord | null};
 }
 
 export const Physics: PhysicsInterface = {
@@ -24,7 +25,7 @@ export const Physics: PhysicsInterface = {
   },
 
   getCappedDelta(physics, position, boundingBox, delta) {
-    let collided = false;
+    let collided = null;
 
     const xx = Math.floor(position.x);
     const zz = Math.floor(position.z);
@@ -42,22 +43,24 @@ export const Physics: PhysicsInterface = {
         z: zz,
       });
       if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
-        console.log(
-          'detecting ground at',
-          yy + 1,
-          'player at',
-          yBottom,
-          'changing',
-          deltaY,
-          'to',
-          yy + 1 - yBottom
-        );
+        // console.log(
+        //   'detecting ground at',
+        //   yy + 1,
+        //   'player at',
+        //   yBottom,
+        //   'changing',
+        //   deltaY,
+        //   'to',
+        //   yy + 1 - yBottom
+        // );
         if (deltaY < yy + 1 - yBottom) {
           deltaY = yy + 1 - yBottom;
-          collided = true;
+          collided = {x: xx, y: yy, z: zz};
         }
       }
     }
+
+    // console.log('collided', collided);
 
     return {cappedDelta: new Vector3(0, deltaY, 0), collided};
   },

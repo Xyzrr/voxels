@@ -127,11 +127,15 @@ export const VoxelRenderer: VoxelRendererInterface = {
       player.boundingBox.max.y,
       player.boundingBox.max.z
     );
+    geometry.translate(
+      player.boundingBox.max.x / 2,
+      player.boundingBox.max.y / 2,
+      player.boundingBox.max.z / 2
+    );
     const wireframe = new THREE.WireframeGeometry(geometry);
     const line = new THREE.LineSegments(wireframe);
     renderer.scene.add(line);
     if (!Array.isArray(line.material)) {
-      line.material.depthTest = false;
       line.material.opacity = 0.25;
       line.material.transparent = true;
     }
@@ -144,9 +148,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
         player.position.z
       );
       renderer.camera.position.set(
-        player.position.x,
+        player.position.x + 3,
         player.position.y + 1.5,
-        player.position.z
+        player.position.z + 3
       );
     };
 

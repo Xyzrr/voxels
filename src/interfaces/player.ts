@@ -48,7 +48,7 @@ export interface PlayerInterface {
 export const Player: PlayerInterface = {
   init() {
     const player: Player = {
-      position: new Vector3(5, 15, 30),
+      position: new Vector3(0, 15, 0),
       rotation: new Euler(0, 0, 0, 'YXZ'),
       moveSpeed: 4,
       boundingBox: new Box3(new Vector3(0, 0, 0), new Vector3(1, 2, 1)),

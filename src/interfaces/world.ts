@@ -52,9 +52,9 @@ export const VoxelWorld: VoxelWorldInterface = {
           return Voxel.unloaded;
         }
         return chunk[
-          (coord.x % CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
-            (coord.y % CHUNK_SIZE) * CHUNK_SIZE +
-            (coord.z % CHUNK_SIZE)
+          ((coord.x + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
+            ((coord.y + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE +
+            ((coord.z + CHUNK_SIZE) % CHUNK_SIZE)
         ];
       },
 

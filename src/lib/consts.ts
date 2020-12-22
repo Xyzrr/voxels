@@ -4,7 +4,7 @@ export const BIOME_SIZE = 10;
 export const MIN_Z = -50;
 export const MAX_Z = 50;
 
-export const DRAW_DISTANCE = 4;
+export const DRAW_DISTANCE = 0;
 export const DRAW_DISTANCE_Y = 2;
 
 // colors
