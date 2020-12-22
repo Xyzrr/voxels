@@ -16,10 +16,10 @@ export interface Player {
 
   flying: boolean;
 
-  flyingForward: boolean;
-  flyingBackward: boolean;
-  flyingLeft: boolean;
-  flyingRight: boolean;
+  movingForward: boolean;
+  movingBackward: boolean;
+  movingLeft: boolean;
+  movingRight: boolean;
   flyingUp: boolean;
   flyingDown: boolean;
 
@@ -33,10 +33,10 @@ export interface PlayerInterface {
   init(): Player;
 
   setPhysics(player: Player, physics: Physics): void;
-  setFlyingForward(player: Player, value: boolean): void;
-  setFlyingBackward(player: Player, value: boolean): void;
-  setFlyingLeft(player: Player, value: boolean): void;
-  setFlyingRight(player: Player, value: boolean): void;
+  setMovingForward(player: Player, value: boolean): void;
+  setMovingBackward(player: Player, value: boolean): void;
+  setMovingLeft(player: Player, value: boolean): void;
+  setMovingRight(player: Player, value: boolean): void;
   setFlyingUp(player: Player, value: boolean): void;
   setFlyingDown(player: Player, value: boolean): void;
   setRotation(player: Player, euler: Euler): void;
@@ -55,49 +55,50 @@ export const Player: PlayerInterface = {
 
       flying: false,
 
-      flyingForward: false,
-      flyingBackward: false,
-      flyingLeft: false,
-      flyingRight: false,
+      movingForward: false,
+      movingBackward: false,
+      movingLeft: false,
+      movingRight: false,
+
       flyingUp: false,
       flyingDown: false,
 
       yVelocity: 0,
 
       update(deltaTime) {
+        if (player.movingForward) {
+          player.position.sub(
+            new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
+              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
+            )
+          );
+        }
+
+        if (player.movingBackward) {
+          player.position.add(
+            new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
+              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
+            )
+          );
+        }
+
+        if (player.movingLeft) {
+          player.position.sub(
+            new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
+              player.rotation
+            )
+          );
+        }
+
+        if (player.movingRight) {
+          player.position.add(
+            new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
+              player.rotation
+            )
+          );
+        }
+
         if (player.flying) {
-          if (player.flyingForward) {
-            player.position.sub(
-              new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
-                new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-              )
-            );
-          }
-
-          if (player.flyingBackward) {
-            player.position.add(
-              new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
-                new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-              )
-            );
-          }
-
-          if (player.flyingLeft) {
-            player.position.sub(
-              new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
-                player.rotation
-              )
-            );
-          }
-
-          if (player.flyingRight) {
-            player.position.add(
-              new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
-                player.rotation
-              )
-            );
-          }
-
           if (player.flyingUp) {
             player.position.add(
               new Vector3(0, deltaTime * player.moveSpeed, 0)
@@ -132,20 +133,20 @@ export const Player: PlayerInterface = {
     player.physics = physics;
   },
 
-  setFlyingForward(player, value) {
-    player.flyingForward = value;
+  setMovingForward(player, value) {
+    player.movingForward = value;
   },
 
-  setFlyingBackward(player, value) {
-    player.flyingBackward = value;
+  setMovingBackward(player, value) {
+    player.movingBackward = value;
   },
 
-  setFlyingLeft(player, value) {
-    player.flyingLeft = value;
+  setMovingLeft(player, value) {
+    player.movingLeft = value;
   },
 
-  setFlyingRight(player, value) {
-    player.flyingRight = value;
+  setMovingRight(player, value) {
+    player.movingRight = value;
   },
 
   setFlyingUp(player, value) {
@@ -164,22 +165,22 @@ export const Player: PlayerInterface = {
   bindToUserControls(player) {
     const onKeyDown = (e: KeyboardEvent): void => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
-        Player.setFlyingForward(player, true);
+        Player.setMovingForward(player, true);
         return;
       }
 
       if (['ArrowDown', 's', 'S'].includes(e.key)) {
-        Player.setFlyingBackward(player, true);
+        Player.setMovingBackward(player, true);
         return;
       }
 
       if (['ArrowLeft', 'a', 'A'].includes(e.key)) {
-        Player.setFlyingLeft(player, true);
+        Player.setMovingLeft(player, true);
         return;
       }
 
       if (['ArrowRight', 'd', 'D'].includes(e.key)) {
-        Player.setFlyingRight(player, true);
+        Player.setMovingRight(player, true);
         return;
       }
 
@@ -196,22 +197,22 @@ export const Player: PlayerInterface = {
 
     const onKeyUp = (e: KeyboardEvent): void => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
-        Player.setFlyingForward(player, false);
+        Player.setMovingForward(player, false);
         return;
       }
 
       if (['ArrowDown', 's', 'S'].includes(e.key)) {
-        Player.setFlyingBackward(player, false);
+        Player.setMovingBackward(player, false);
         return;
       }
 
       if (['ArrowLeft', 'a', 'A'].includes(e.key)) {
-        Player.setFlyingLeft(player, false);
+        Player.setMovingLeft(player, false);
         return;
       }
 
       if (['ArrowRight', 'd', 'D'].includes(e.key)) {
-        Player.setFlyingRight(player, false);
+        Player.setMovingRight(player, false);
         return;
       }
 
