@@ -7,7 +7,7 @@ function computeVoxel(coord: Coord): Voxel {
   const height =
     simplex2(coord.x / 94, coord.z / 94) * 5 +
     simplex2(coord.x / 100, coord.z / 100) * 4;
-  if (coord.y <= height) {
+  if (coord.y <= height || coord.y > 3) {
     return Voxel.dirt;
   }
   if (coord.y <= -2) {

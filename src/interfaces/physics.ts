@@ -44,20 +44,37 @@ export const Physics: PhysicsInterface = {
         zz < position.z + boundingBox.max.z;
         zz++
       ) {
-        for (
-          let yy = Math.floor(position.y + 0.01) - 1;
-          yy + 1 > position.y + delta;
-          yy--
-        ) {
-          const voxel = VoxelWorld.getVoxel(physics.world, {
-            x: xx,
-            y: yy,
-            z: zz,
-          });
-          if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
-            if (cappedDelta < yy + 1 - position.y) {
-              cappedDelta = yy + 1 - position.y;
-              collided = true;
+        if (delta > 0) {
+          const topY = position.y + boundingBox.max.y;
+          for (let yy = Math.ceil(topY - 0.01); yy < topY + delta; yy++) {
+            const voxel = VoxelWorld.getVoxel(physics.world, {
+              x: xx,
+              y: yy,
+              z: zz,
+            });
+            if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
+              if (cappedDelta > yy - topY) {
+                cappedDelta = yy - topY;
+                collided = true;
+              }
+            }
+          }
+        } else {
+          for (
+            let yy = Math.floor(position.y + 0.01) - 1;
+            yy + 1 > position.y + delta;
+            yy--
+          ) {
+            const voxel = VoxelWorld.getVoxel(physics.world, {
+              x: xx,
+              y: yy,
+              z: zz,
+            });
+            if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
+              if (cappedDelta < yy + 1 - position.y) {
+                cappedDelta = yy + 1 - position.y;
+                collided = true;
+              }
             }
           }
         }
