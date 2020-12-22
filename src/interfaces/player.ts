@@ -68,13 +68,9 @@ export const Player: PlayerInterface = {
       yVelocity: 0,
 
       update(deltaTime) {
-        if (player.movingForward) {
+        const moveForwardBy = (distance: number): boolean => {
           if (player.physics != null) {
-            const rawDelta = new Vector3(
-              0,
-              0,
-              -deltaTime * player.moveSpeed
-            ).applyEuler(
+            const rawDelta = new Vector3(0, 0, -distance).applyEuler(
               new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
             );
             const {cappedDelta, collided} = Physics.getCappedDelta3(
@@ -84,56 +80,71 @@ export const Player: PlayerInterface = {
               rawDelta
             );
             player.position.add(cappedDelta);
+            return collided;
           }
-        }
+          return false;
+        };
 
-        if (player.movingBackward) {
-          player.position.add(
-            new Vector3(0, 0, deltaTime * player.moveSpeed).applyEuler(
-              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-            )
-          );
-        }
-
-        if (player.movingLeft) {
-          player.position.sub(
-            new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
-              player.rotation
-            )
-          );
-        }
-
-        if (player.movingRight) {
-          player.position.add(
-            new Vector3(deltaTime * player.moveSpeed, 0, 0).applyEuler(
-              player.rotation
-            )
-          );
-        }
-
-        if (player.flying) {
-          if (player.flyingUp) {
-            player.position.add(
-              new Vector3(0, deltaTime * player.moveSpeed, 0)
-            );
-          }
-
-          if (player.flyingDown) {
-            player.position.sub(
-              new Vector3(0, deltaTime * player.moveSpeed, 0)
-            );
-          }
-        } else {
+        const moveRightBy = (distance: number): boolean => {
           if (player.physics != null) {
-            player.yVelocity -= deltaTime * GRAVITY;
-            let deltaY = deltaTime * player.yVelocity;
+            const rawDelta = new Vector3(distance, 0, 0).applyEuler(
+              player.rotation
+            );
             const {cappedDelta, collided} = Physics.getCappedDelta3(
               player.physics,
               player.position,
               player.boundingBox,
-              new Vector3(0, deltaY, 0)
+              rawDelta
             );
             player.position.add(cappedDelta);
+            return collided;
+          }
+          return false;
+        };
+
+        const moveUpBy = (distance: number): boolean => {
+          if (player.physics != null) {
+            const rawDelta = new Vector3(0, distance, 0);
+            const {cappedDelta, collided} = Physics.getCappedDelta3(
+              player.physics,
+              player.position,
+              player.boundingBox,
+              rawDelta
+            );
+            player.position.add(cappedDelta);
+            return collided;
+          }
+          return false;
+        };
+
+        if (player.movingForward) {
+          moveForwardBy(deltaTime * player.moveSpeed);
+        }
+
+        if (player.movingBackward) {
+          moveForwardBy(-deltaTime * player.moveSpeed);
+        }
+
+        if (player.movingLeft) {
+          moveRightBy(-deltaTime * player.moveSpeed);
+        }
+
+        if (player.movingRight) {
+          moveRightBy(deltaTime * player.moveSpeed);
+        }
+
+        if (player.flying) {
+          if (player.flyingUp) {
+            moveUpBy(deltaTime * player.moveSpeed);
+          }
+
+          if (player.flyingDown) {
+            moveUpBy(-deltaTime * player.moveSpeed);
+          }
+        } else {
+          if (player.physics != null) {
+            player.yVelocity -= deltaTime * GRAVITY;
+            const collided = moveUpBy(deltaTime * player.yVelocity);
             if (collided) {
               player.yVelocity = 0;
             }
