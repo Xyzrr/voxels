@@ -15,6 +15,7 @@ import {
 } from '../lib/consts';
 import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
+import {Vector3} from 'three';
 
 (window as any).THREE = THREE;
 
@@ -140,6 +141,18 @@ export const VoxelRenderer: VoxelRendererInterface = {
       line.material.transparent = true;
     }
 
+    const setThirdPersonCameraPosition = (): void => {
+      let target = new Vector3();
+      renderer.camera.getWorldDirection(target);
+      let boundingBoxCenter = new Vector3();
+      player.boundingBox.getCenter(boundingBoxCenter);
+      const playerCenter = player.position.clone().add(boundingBoxCenter);
+      const newPosition = playerCenter
+        .setY(player.position.y + 1.5)
+        .sub(target.multiplyScalar(10));
+      renderer.camera.position.set(newPosition.x, newPosition.y, newPosition.z);
+    };
+
     player.update = (delta) => {
       update(delta);
       line.position.set(
@@ -147,16 +160,13 @@ export const VoxelRenderer: VoxelRendererInterface = {
         player.position.y,
         player.position.z
       );
-      renderer.camera.position.set(
-        player.position.x + 3,
-        player.position.y + 1.5,
-        player.position.z + 3
-      );
+      setThirdPersonCameraPosition();
     };
 
     player.onRotate = () => {
       onRotate?.();
       renderer.camera.quaternion.setFromEuler(player.rotation);
+      setThirdPersonCameraPosition();
     };
 
     renderer.player = player;
