@@ -142,14 +142,17 @@ export const VoxelRenderer: VoxelRendererInterface = {
     }
 
     const setThirdPersonCameraPosition = (): void => {
-      let target = new Vector3();
-      renderer.camera.getWorldDirection(target);
       let boundingBoxCenter = new Vector3();
       player.boundingBox.getCenter(boundingBoxCenter);
       const playerCenter = player.position.clone().add(boundingBoxCenter);
+
+      let cameraDirectionVector = new Vector3();
+      renderer.camera.getWorldDirection(cameraDirectionVector);
+
       const newPosition = playerCenter
         .setY(player.position.y + 1.5)
-        .sub(target.multiplyScalar(10));
+        .sub(cameraDirectionVector.multiplyScalar(10));
+
       renderer.camera.position.set(newPosition.x, newPosition.y, newPosition.z);
     };
 
