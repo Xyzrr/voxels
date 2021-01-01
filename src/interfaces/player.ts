@@ -3,7 +3,7 @@ import {Physics} from './physics';
 import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
 
-const GRAVITY = 9.8;
+const GRAVITY = 19.6;
 
 const PLAYER_TO_EVENT_LISTENER: WeakMap<Player, any> = new WeakMap();
 
@@ -161,7 +161,7 @@ export const Player: PlayerInterface = {
   },
 
   jump(player) {
-    player.yVelocity = 5;
+    player.yVelocity = 10;
   },
 
   setMovingForward(player, value) {
