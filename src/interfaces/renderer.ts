@@ -390,5 +390,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
       await VoxelRenderer.loadChunk(renderer, chunkCoord);
     }
     renderer.rendering = false;
+    // console.log('world blocks', renderer.world?.cache);
   },
 };

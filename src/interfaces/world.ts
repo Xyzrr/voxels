@@ -8,6 +8,8 @@ import {ChunkData} from './chunk';
 
 const worker = new Worker();
 
+const mod = (a: number, n: number): number => ((a % n) + n) % n;
+
 export interface Neighbors {
   left: ChunkData;
   right: ChunkData;
@@ -52,9 +54,9 @@ export const VoxelWorld: VoxelWorldInterface = {
           return Voxel.unloaded;
         }
         return chunk[
-          ((coord.x + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
-            ((coord.y + CHUNK_SIZE) % CHUNK_SIZE) * CHUNK_SIZE +
-            ((coord.z + CHUNK_SIZE) % CHUNK_SIZE)
+          mod(coord.x, CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
+            mod(coord.y, CHUNK_SIZE) * CHUNK_SIZE +
+            mod(coord.z, CHUNK_SIZE)
         ];
       },
 

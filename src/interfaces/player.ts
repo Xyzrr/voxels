@@ -52,7 +52,7 @@ export const Player: PlayerInterface = {
     const player: Player = {
       position: new Vector3(0, 2, 0),
       rotation: new Euler(0, 0, 0, 'YXZ'),
-      moveSpeed: 4,
+      moveSpeed: 40,
       boundingBox: new Box3(new Vector3(0, 0, 0), new Vector3(1, 2, 1)),
 
       flying: false,
