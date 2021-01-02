@@ -15,7 +15,7 @@ import {
 } from '../lib/consts';
 import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
-import {Vector3} from 'three';
+import {PlayerCamera} from './camera';
 
 (window as any).THREE = THREE;
 
@@ -28,7 +28,7 @@ export interface VoxelRenderer {
   texture: THREE.Texture;
   glRenderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
-  camera: THREE.PerspectiveCamera;
+  camera?: PlayerCamera;
   loadedChunks: CoordMap<Chunk>;
   chunkQueue: Coord[];
   rendering: boolean;
@@ -63,17 +63,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
     const renderer: VoxelRenderer = {
       lastFrameTime: Date.now() / 1000,
       texture,
-
-      camera: (() => {
-        const camera = new THREE.PerspectiveCamera(
-          50,
-          window.innerWidth / window.innerHeight,
-          1,
-          20000
-        );
-        camera.position.set(5, 15, 30);
-        return camera;
-      })(),
 
       scene: (() => {
         const scene = new THREE.Scene();
@@ -121,7 +110,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
   },
 
   setPlayer(renderer, player) {
-    const {update, onRotate} = player;
+    const {update} = player;
 
     const geometry = new THREE.BoxBufferGeometry(
       player.boundingBox.max.x,
@@ -141,21 +130,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
       line.material.transparent = true;
     }
 
-    const setThirdPersonCameraPosition = (): void => {
-      let boundingBoxCenter = new Vector3();
-      player.boundingBox.getCenter(boundingBoxCenter);
-      const playerCenter = player.position.clone().add(boundingBoxCenter);
-
-      let cameraDirectionVector = new Vector3();
-      renderer.camera.getWorldDirection(cameraDirectionVector);
-
-      const newPosition = playerCenter
-        .setY(player.position.y + 1.5)
-        .sub(cameraDirectionVector.multiplyScalar(10));
-
-      renderer.camera.position.set(newPosition.x, newPosition.y, newPosition.z);
-    };
-
     player.update = (delta) => {
       update(delta);
       line.position.set(
@@ -163,24 +137,23 @@ export const VoxelRenderer: VoxelRendererInterface = {
         player.position.y,
         player.position.z
       );
-      setThirdPersonCameraPosition();
-    };
-
-    player.onRotate = () => {
-      onRotate?.();
-      renderer.camera.quaternion.setFromEuler(player.rotation);
-      setThirdPersonCameraPosition();
     };
 
     renderer.player = player;
+    renderer.camera = PlayerCamera.init(player);
   },
 
   bindToElement(renderer, container) {
     container.appendChild(renderer.glRenderer.domElement);
     renderer.resizeHandler = () => {
       renderer.glRenderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.camera.aspect = window.innerWidth / window.innerHeight;
-      renderer.camera.updateProjectionMatrix();
+      if (renderer.camera != null) {
+        PlayerCamera.adaptToScreenSize(
+          renderer.camera,
+          window.innerWidth,
+          window.innerHeight
+        );
+      }
     };
     window.addEventListener('resize', renderer.resizeHandler);
   },
@@ -201,7 +174,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
       VoxelRenderer.addNearbyCellsToQueue(renderer);
 
       renderer.player?.update(delta);
-      renderer.glRenderer.render(renderer.scene, renderer.camera);
+      if (renderer.camera != null) {
+        renderer.glRenderer.render(renderer.scene, renderer.camera.camera);
+      }
 
       requestAnimationFrame(animate);
     }
