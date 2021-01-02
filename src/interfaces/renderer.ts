@@ -51,6 +51,7 @@ interface VoxelRendererInterface {
     data: ChunkGeometryData,
     transparent: boolean
   ): THREE.Mesh | null;
+  renderChunk(renderer: VoxelRenderer, chunkCoord: Coord): Promise<Chunk>;
   loadChunk(renderer: VoxelRenderer, cellCoord: Coord): Promise<Chunk>;
   addNearbyCellsToQueue(renderer: VoxelRenderer): void;
   flushQueue(renderer: VoxelRenderer): Promise<void>;
@@ -224,107 +225,107 @@ export const VoxelRenderer: VoxelRendererInterface = {
     return new THREE.Mesh(geometry, material);
   },
 
+  async renderChunk(renderer, chunkCoord) {
+    return new Promise((resolve) => {
+      if (renderer.world == null) {
+        throw new Error('Must set world before rendering chunks');
+      }
+
+      const chunk = VoxelWorld.getChunk(renderer.world, chunkCoord);
+
+      if (chunk == null) {
+        throw new Error('Attempted to render null chunk');
+      }
+
+      const neighbors = VoxelWorld.getNeighbors(renderer.world, chunkCoord);
+
+      messageWorker(
+        worker,
+        {
+          type: 'generateChunkGeometry',
+          chunkCoord,
+          chunk,
+          neighbors,
+        },
+        [chunk.buffer, ...Object.values(neighbors).map((n) => n.buffer)]
+      ).then(
+        ({
+          opaque,
+          transparent,
+          chunk: returnedChunk,
+          neighbors: returnedNeighbors,
+        }) => {
+          console.log('Renderer: Received message from worker', returnedChunk);
+          if (renderer.world) {
+            // Reactivate buffers in cache
+            CoordMap.set(renderer.world.cache, chunkCoord, returnedChunk);
+            for (let key of Object.keys(returnedNeighbors)) {
+              for (let face of VOXEL_FACES) {
+                if (face.name === key) {
+                  CoordMap.set(
+                    renderer.world.cache,
+                    {
+                      x: chunkCoord.x + face.dir[0],
+                      y: chunkCoord.y + face.dir[1],
+                      z: chunkCoord.z + face.dir[2],
+                    },
+                    returnedNeighbors[key]
+                  );
+                }
+              }
+            }
+          }
+
+          const opaqueMesh =
+            opaque == null
+              ? undefined
+              : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
+          const transparentMesh =
+            transparent == null
+              ? undefined
+              : VoxelRenderer.buildChunkMesh(renderer, transparent, true);
+
+          const chunk: Chunk = {};
+
+          if (opaqueMesh) {
+            console.log('Renderer: Adding opaque mesh', opaqueMesh);
+            renderer.scene.add(opaqueMesh);
+            opaqueMesh.position.set(
+              chunkCoord.x * CHUNK_SIZE,
+              chunkCoord.y * CHUNK_SIZE,
+              chunkCoord.z * CHUNK_SIZE
+            );
+            chunk.opaqueMesh = opaqueMesh;
+          }
+
+          if (transparentMesh) {
+            console.log('Renderer: Adding transparent mesh', transparentMesh);
+            renderer.scene.add(transparentMesh);
+            transparentMesh.position.set(
+              chunkCoord.x * CHUNK_SIZE,
+              chunkCoord.y * CHUNK_SIZE,
+              chunkCoord.z * CHUNK_SIZE
+            );
+            chunk.transparentMesh = transparentMesh;
+          }
+
+          CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
+          resolve(chunk);
+        }
+      );
+    });
+  },
+
   async loadChunk(renderer, chunkCoord) {
     return new Promise<Chunk>((resolve) => {
       if (renderer.world) {
         console.log('Renderer: Loading chunk and neighbors', chunkCoord);
 
         VoxelWorld.loadChunkAndNeighbors(renderer.world, chunkCoord).then(
-          ({chunk, neighbors}) => {
+          () => {
             console.log('Renderer: Loaded chunk and neighbors at', chunkCoord);
 
-            if (renderer.world != null) {
-              console.log('Renderer: Posting generate chunk message');
-
-              messageWorker(
-                worker,
-                {
-                  type: 'generateChunkGeometry',
-                  chunkCoord,
-                  chunk,
-                  neighbors,
-                },
-                [chunk.buffer, ...Object.values(neighbors).map((n) => n.buffer)]
-              ).then(
-                ({
-                  opaque,
-                  transparent,
-                  chunk: returnedChunk,
-                  neighbors: returnedNeighbors,
-                }) => {
-                  console.log(
-                    'Renderer: Received message from worker',
-                    returnedChunk
-                  );
-                  if (renderer.world) {
-                    // Reactivate buffers in cache
-                    CoordMap.set(
-                      renderer.world.cache,
-                      chunkCoord,
-                      returnedChunk
-                    );
-                    for (let key of Object.keys(returnedNeighbors)) {
-                      for (let face of VOXEL_FACES) {
-                        if (face.name === key) {
-                          CoordMap.set(
-                            renderer.world.cache,
-                            {
-                              x: chunkCoord.x + face.dir[0],
-                              y: chunkCoord.y + face.dir[1],
-                              z: chunkCoord.z + face.dir[2],
-                            },
-                            returnedNeighbors[key]
-                          );
-                        }
-                      }
-                    }
-                  }
-
-                  const opaqueMesh =
-                    opaque == null
-                      ? undefined
-                      : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
-                  const transparentMesh =
-                    transparent == null
-                      ? undefined
-                      : VoxelRenderer.buildChunkMesh(
-                          renderer,
-                          transparent,
-                          true
-                        );
-
-                  const chunk: Chunk = {};
-
-                  if (opaqueMesh) {
-                    console.log('Renderer: Adding opaque mesh', opaqueMesh);
-                    renderer.scene.add(opaqueMesh);
-                    opaqueMesh.position.set(
-                      chunkCoord.x * CHUNK_SIZE,
-                      chunkCoord.y * CHUNK_SIZE,
-                      chunkCoord.z * CHUNK_SIZE
-                    );
-                    chunk.opaqueMesh = opaqueMesh;
-                  }
-
-                  if (transparentMesh) {
-                    console.log(
-                      'Renderer: Adding transparent mesh',
-                      transparentMesh
-                    );
-                    renderer.scene.add(transparentMesh);
-                    transparentMesh.position.set(
-                      chunkCoord.x * CHUNK_SIZE,
-                      chunkCoord.y * CHUNK_SIZE,
-                      chunkCoord.z * CHUNK_SIZE
-                    );
-                    chunk.transparentMesh = transparentMesh;
-                  }
-
-                  CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
-                  resolve(chunk);
-                }
-              );
-            }
+            VoxelRenderer.renderChunk(renderer, chunkCoord).then(resolve);
           }
         );
       }
