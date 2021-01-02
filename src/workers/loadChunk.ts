@@ -16,10 +16,9 @@ function computeVoxel(coord: Coord): Voxel {
   return Voxel.air;
 }
 
-// eslint-disable-next-line no-restricted-globals
-const ctx: Worker = self as any;
-
-export function loadChunk(data: {chunkCoord: Coord}) {
+export function loadChunk(data: {
+  chunkCoord: Coord;
+}): {message: any; transfer: Transferable[]} {
   console.log('World (worker): Loading chunk', data.chunkCoord, '...');
   let startTime = Date.now();
 
@@ -41,11 +40,8 @@ export function loadChunk(data: {chunkCoord: Coord}) {
     }
   }
 
-  ctx.postMessage({type: 'loadChunk', coord: data.chunkCoord, voxels}, [
-    voxels.buffer,
-  ]);
-
   let totalTime = Date.now() - startTime;
+
   console.log(
     'World (worker): Loaded chunk at',
     data.chunkCoord,
@@ -53,4 +49,9 @@ export function loadChunk(data: {chunkCoord: Coord}) {
     totalTime,
     'ms'
   );
+
+  return {
+    message: {type: 'loadChunk', coord: data.chunkCoord, voxels},
+    transfer: [voxels.buffer],
+  };
 }

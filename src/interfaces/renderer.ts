@@ -16,6 +16,7 @@ import {
 import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
 import {PlayerCamera} from './camera';
+import {messageWorker} from '../util/messageWorker';
 
 (window as any).THREE = THREE;
 
@@ -235,7 +236,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
             if (renderer.world != null) {
               console.log('Renderer: Posting generate chunk message');
 
-              worker.postMessage(
+              messageWorker(
+                worker,
                 {
                   type: 'generateChunkGeometry',
                   chunkCoord,
@@ -243,20 +245,17 @@ export const VoxelRenderer: VoxelRendererInterface = {
                   neighbors,
                 },
                 [chunk.buffer, ...Object.values(neighbors).map((n) => n.buffer)]
-              );
-
-              const callback = (e: MessageEvent<any>): void => {
-                worker.removeEventListener('message', callback);
-
-                console.log('Renderer: Received message from worker', e);
-                if (e.data.type === 'generateChunkGeometry') {
-                  const {
-                    opaque,
-                    transparent,
-                    chunk: returnedChunk,
-                    neighbors: returnedNeighbors,
-                  } = e.data;
-
+              ).then(
+                ({
+                  opaque,
+                  transparent,
+                  chunk: returnedChunk,
+                  neighbors: returnedNeighbors,
+                }) => {
+                  console.log(
+                    'Renderer: Received message from worker',
+                    returnedChunk
+                  );
                   if (renderer.world) {
                     // Reactivate buffers in cache
                     CoordMap.set(
@@ -324,9 +323,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
                   CoordMap.set(renderer.loadedChunks, chunkCoord, chunk);
                   resolve(chunk);
                 }
-              };
-
-              worker.addEventListener('message', callback);
+              );
             }
           }
         );

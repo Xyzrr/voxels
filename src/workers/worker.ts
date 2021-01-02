@@ -5,13 +5,23 @@ import {loadChunk} from './loadChunk';
 const ctx: Worker = self as any;
 
 ctx.addEventListener('message', (e) => {
-  if (e.data.type === 'loadChunk') {
-    loadChunk(e.data);
+  const {id, message} = e.data;
+
+  let result: {message: any; transfer: Transferable[]} | null = null;
+
+  if (message.type === 'loadChunk') {
+    result = loadChunk(message);
   }
 
-  if (e.data.type === 'generateChunkGeometry') {
-    generateChunkGeometry(e.data);
+  if (message.type === 'generateChunkGeometry') {
+    result = generateChunkGeometry(message);
   }
+
+  if (result == null) {
+    throw new Error('Bad message received by worker');
+  }
+
+  ctx.postMessage({id, message: result.message}, result.transfer);
 });
 
 export {};

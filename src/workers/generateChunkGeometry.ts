@@ -3,9 +3,6 @@ import {Voxel} from '../interfaces/voxel';
 import {ChunkData} from '../interfaces/chunk';
 import {Neighbors} from '../interfaces/world';
 
-// eslint-disable-next-line no-restricted-globals
-const ctx: Worker = self as any;
-
 const tileSize = 16;
 const tileTextureWidth = 256;
 const tileTextureHeight = 64;
@@ -152,7 +149,7 @@ function getGeometry(
 export function generateChunkGeometry(data: {
   chunk: ChunkData;
   neighbors: Neighbors;
-}) {
+}): {message: any; transfer: Transferable[]} {
   console.log('Renderer (worker): Generating geometry...');
   let startTime = Date.now();
 
@@ -166,22 +163,22 @@ export function generateChunkGeometry(data: {
     true
   );
 
-  ctx.postMessage(
-    {
+  let totalTime = Date.now() - startTime;
+  console.log('Renderer (worker): Generated geometry in', totalTime, 'ms');
+
+  return {
+    message: {
       type: 'generateChunkGeometry',
       transparent: transparentGeometry,
       opaque: opaqueGeometry,
       chunk,
       neighbors,
     },
-    [
+    transfer: [
       ...opaqueBuffer,
       ...transparentBuffer,
       chunk.buffer,
       ...Object.values(neighbors).map((n) => n.buffer),
-    ]
-  );
-
-  let totalTime = Date.now() - startTime;
-  console.log('Renderer (worker): Generated geometry in', totalTime, 'ms');
+    ],
+  };
 }

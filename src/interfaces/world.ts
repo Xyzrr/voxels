@@ -5,6 +5,7 @@ import {Voxel} from './voxel';
 import {Coord, CoordMap} from './coord';
 import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
 import {ChunkData} from './chunk';
+import {messageWorker} from '../util/messageWorker';
 
 const worker = new Worker();
 
@@ -114,19 +115,16 @@ export const VoxelWorld: VoxelWorldInterface = {
   },
 
   async loadChunk(world, chunkCoord) {
-    return new Promise((resolve) => {
-      console.log('World: Posting load chunk message', chunkCoord);
-      worker.postMessage({type: 'loadChunk', chunkCoord});
-      const callback = (event: MessageEvent): void => {
-        worker.removeEventListener('message', callback);
-        console.log('World: Received message from worker', event);
-        if (event.data.type === 'loadChunk') {
-          CoordMap.set(world.cache, event.data.coord, event.data.voxels);
-          resolve(event.data.voxels);
+    console.log('World: Posting load chunk message', chunkCoord);
+    return new Promise((resolve) =>
+      messageWorker(worker, {type: 'loadChunk', chunkCoord}).then(
+        ({coord, voxels}) => {
+          console.log('World: Received message from worker', event);
+          CoordMap.set(world.cache, coord, voxels);
+          resolve(voxels);
         }
-      };
-      worker.addEventListener('message', callback);
-    });
+      )
+    );
   },
 
   async loadChunkAndNeighbors(world, chunkCoord) {
