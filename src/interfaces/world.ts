@@ -28,6 +28,7 @@ export interface VoxelWorld {
 
 export interface VoxelWorldInterface {
   init(): VoxelWorld;
+  chunkCoordFromVoxelCoord(world: VoxelWorld, voxelCoord: Coord): Coord;
   getVoxel(world: VoxelWorld, coord: Coord): Voxel | null;
   getChunk(world: VoxelWorld, chunkCoord: Coord): ChunkData | null;
   getNeighbors(world: VoxelWorld, chunkCoord: Coord): Neighbors;
@@ -80,6 +81,14 @@ export const VoxelWorld: VoxelWorldInterface = {
     };
 
     return world;
+  },
+
+  chunkCoordFromVoxelCoord(world, voxelCoord) {
+    return {
+      x: Math.floor(voxelCoord.x / CHUNK_SIZE),
+      y: Math.floor(voxelCoord.y / CHUNK_SIZE),
+      z: Math.floor(voxelCoord.z / CHUNK_SIZE),
+    };
   },
 
   getChunk(world, chunkCoord) {
