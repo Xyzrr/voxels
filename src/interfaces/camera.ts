@@ -64,44 +64,31 @@ export const PlayerCamera: PlayerCameraInterface = {
   },
 
   setFirstPersonCameraPosition(playerCamera) {
-    let boundingBoxCenter = new THREE.Vector3();
-    playerCamera.player.boundingBox.getCenter(boundingBoxCenter);
-    const playerCenter = playerCamera.player.position
-      .clone()
-      .add(boundingBoxCenter);
-
     let cameraDirectionVector = new THREE.Vector3();
     playerCamera.camera.getWorldDirection(cameraDirectionVector);
 
-    const newPosition = playerCenter.setY(
-      playerCamera.player.position.y + 1.75
-    );
+    const eyePosition = Player.getEyePosition(playerCamera.player);
 
     playerCamera.camera.position.set(
-      newPosition.x,
-      newPosition.y,
-      newPosition.z
+      eyePosition.x,
+      eyePosition.y,
+      eyePosition.z
     );
   },
 
   setThirdPersonCameraPosition(playerCamera) {
-    let boundingBoxCenter = new THREE.Vector3();
-    playerCamera.player.boundingBox.getCenter(boundingBoxCenter);
-    const playerCenter = playerCamera.player.position
-      .clone()
-      .add(boundingBoxCenter);
-
     let cameraDirectionVector = new THREE.Vector3();
     playerCamera.camera.getWorldDirection(cameraDirectionVector);
 
-    const newPosition = playerCenter
-      .setY(playerCamera.player.position.y + 1.75)
-      .sub(cameraDirectionVector.multiplyScalar(10));
+    const eyePosition = Player.getEyePosition(playerCamera.player);
+    const newCameraPosition = eyePosition.sub(
+      cameraDirectionVector.multiplyScalar(10)
+    );
 
     playerCamera.camera.position.set(
-      newPosition.x,
-      newPosition.y,
-      newPosition.z
+      newCameraPosition.x,
+      newCameraPosition.y,
+      newCameraPosition.z
     );
   },
 

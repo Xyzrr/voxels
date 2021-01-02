@@ -24,9 +24,9 @@ export interface PhysicsInterface {
   ): {cappedDelta: Vector3; collided: boolean};
   intersectRay(
     physics: Physics,
-    start: Coord,
-    end: Coord
-  ): {position: Coord; voxel: Voxel} | null;
+    start: Vector3,
+    end: Vector3
+  ): {position: Vector3; voxel: Voxel} | null;
 }
 
 export const Physics: PhysicsInterface = {
@@ -165,11 +165,11 @@ export const Physics: PhysicsInterface = {
       const voxel = VoxelWorld.getVoxel(physics.world, {x: ix, y: iy, z: iz});
       if (voxel) {
         return {
-          position: {
-            x: start.x + t * dx,
-            y: start.y + t * dy,
-            z: start.z + t * dz,
-          },
+          position: new Vector3(
+            start.x + t * dx,
+            start.y + t * dy,
+            start.z + t * dz
+          ),
           voxel,
         };
       }

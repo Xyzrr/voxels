@@ -1,4 +1,5 @@
 import {Box3, BoxBufferGeometry, Euler, Vector3} from 'three';
+import * as THREE from 'three';
 import {Physics} from './physics';
 import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
@@ -33,6 +34,8 @@ export interface PlayerInterface {
   init(): Player;
 
   setPhysics(player: Player, physics: Physics): void;
+
+  getEyePosition(player: Player): Vector3;
 
   jump(player: Player): void;
   setMovingForward(player: Player, value: boolean): void;
@@ -69,52 +72,55 @@ export const Player: PlayerInterface = {
 
       update(deltaTime) {
         const moveForwardBy = (distance: number): boolean => {
-          if (player.physics != null) {
-            const rawDelta = new Vector3(0, 0, -distance).applyEuler(
-              new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
-            );
-            const {cappedDelta, collided} = Physics.getCappedDelta3(
-              player.physics,
-              player.position,
-              player.boundingBox,
-              rawDelta
-            );
-            player.position.add(cappedDelta);
-            return collided;
+          if (player.physics == null) {
+            return false;
           }
-          return false;
+
+          const rawDelta = new Vector3(0, 0, -distance).applyEuler(
+            new Euler(0, player.rotation.y, player.rotation.z, 'YXZ')
+          );
+          const {cappedDelta, collided} = Physics.getCappedDelta3(
+            player.physics,
+            player.position,
+            player.boundingBox,
+            rawDelta
+          );
+          player.position.add(cappedDelta);
+          return collided;
         };
 
         const moveRightBy = (distance: number): boolean => {
-          if (player.physics != null) {
-            const rawDelta = new Vector3(distance, 0, 0).applyEuler(
-              player.rotation
-            );
-            const {cappedDelta, collided} = Physics.getCappedDelta3(
-              player.physics,
-              player.position,
-              player.boundingBox,
-              rawDelta
-            );
-            player.position.add(cappedDelta);
-            return collided;
+          if (player.physics == null) {
+            return false;
           }
-          return false;
+
+          const rawDelta = new Vector3(distance, 0, 0).applyEuler(
+            player.rotation
+          );
+          const {cappedDelta, collided} = Physics.getCappedDelta3(
+            player.physics,
+            player.position,
+            player.boundingBox,
+            rawDelta
+          );
+          player.position.add(cappedDelta);
+          return collided;
         };
 
         const moveUpBy = (distance: number): boolean => {
-          if (player.physics != null) {
-            const rawDelta = new Vector3(0, distance, 0);
-            const {cappedDelta, collided} = Physics.getCappedDelta3(
-              player.physics,
-              player.position,
-              player.boundingBox,
-              rawDelta
-            );
-            player.position.add(cappedDelta);
-            return collided;
+          if (player.physics == null) {
+            return false;
           }
-          return false;
+
+          const rawDelta = new Vector3(0, distance, 0);
+          const {cappedDelta, collided} = Physics.getCappedDelta3(
+            player.physics,
+            player.position,
+            player.boundingBox,
+            rawDelta
+          );
+          player.position.add(cappedDelta);
+          return collided;
         };
 
         if (player.movingForward) {
@@ -158,6 +164,14 @@ export const Player: PlayerInterface = {
 
   setPhysics(player, physics) {
     player.physics = physics;
+  },
+
+  getEyePosition(player) {
+    let boundingBoxCenter = new THREE.Vector3();
+    player.boundingBox.getCenter(boundingBoxCenter);
+    const playerCenter = player.position.clone().add(boundingBoxCenter);
+    const eyePosition = playerCenter.setY(player.position.y + 1.75);
+    return eyePosition;
   },
 
   jump(player) {
@@ -279,11 +293,35 @@ export const Player: PlayerInterface = {
       );
     };
 
-    PLAYER_TO_EVENT_LISTENERS.set(player, {onKeyDown, onKeyUp, onMouseMove});
+    const onMouseDown = (e: MouseEvent): void => {
+      if (player.physics == null) {
+        return;
+      }
+
+      const reach = 10;
+      const reachDelta = new Vector3(0, 0, reach).applyEuler(player.rotation);
+
+      const startPosition = Player.getEyePosition(player);
+      const endPosition = startPosition.add(reachDelta);
+
+      const intersection = Physics.intersectRay(
+        player.physics,
+        startPosition,
+        endPosition
+      );
+    };
+
+    PLAYER_TO_EVENT_LISTENERS.set(player, {
+      onKeyDown,
+      onKeyUp,
+      onMouseMove,
+      onMouseDown,
+    });
 
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousedown', onMouseDown);
   },
 
   unbindFromUserControls(player) {
@@ -298,6 +336,10 @@ export const Player: PlayerInterface = {
     window.removeEventListener(
       'mousemove',
       PLAYER_TO_EVENT_LISTENERS.get(player).onMouseMove
+    );
+    window.removeEventListener(
+      'mousedown',
+      PLAYER_TO_EVENT_LISTENERS.get(player).onMouseDown
     );
 
     PLAYER_TO_EVENT_LISTENERS.delete(player);
