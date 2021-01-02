@@ -22,6 +22,11 @@ export interface PhysicsInterface {
     boundingBox: Box3,
     delta: Vector3
   ): {cappedDelta: Vector3; collided: boolean};
+  intersectRay(
+    physics: Physics,
+    start: Coord,
+    end: Coord
+  ): {position: Coord; voxel: Voxel} | null;
 }
 
 export const Physics: PhysicsInterface = {
@@ -118,5 +123,84 @@ export const Physics: PhysicsInterface = {
       cappedDelta: new Vector3(cappedDeltaX, cappedDeltaY, cappedDeltaZ),
       collided: collidedX || collidedY || collidedZ,
     };
+  },
+
+  intersectRay(physics, start, end) {
+    let dx = end.x - start.x;
+    let dy = end.y - start.y;
+    let dz = end.z - start.z;
+    const lenSq = dx * dx + dy * dy + dz * dz;
+    const len = Math.sqrt(lenSq);
+
+    dx /= len;
+    dy /= len;
+    dz /= len;
+
+    let t = 0.0;
+    let ix = Math.floor(start.x);
+    let iy = Math.floor(start.y);
+    let iz = Math.floor(start.z);
+
+    const stepX = dx > 0 ? 1 : -1;
+    const stepY = dy > 0 ? 1 : -1;
+    const stepZ = dz > 0 ? 1 : -1;
+
+    const txDelta = Math.abs(1 / dx);
+    const tyDelta = Math.abs(1 / dy);
+    const tzDelta = Math.abs(1 / dz);
+
+    const xDist = stepX > 0 ? ix + 1 - start.x : start.x - ix;
+    const yDist = stepY > 0 ? iy + 1 - start.y : start.y - iy;
+    const zDist = stepZ > 0 ? iz + 1 - start.z : start.z - iz;
+
+    // location of nearest voxel boundary, in units of t
+    let txMax = txDelta < Infinity ? txDelta * xDist : Infinity;
+    let tyMax = tyDelta < Infinity ? tyDelta * yDist : Infinity;
+    let tzMax = tzDelta < Infinity ? tzDelta * zDist : Infinity;
+
+    let steppedIndex = -1;
+
+    // main loop along raycast vector
+    while (t <= len) {
+      const voxel = VoxelWorld.getVoxel(physics.world, {x: ix, y: iy, z: iz});
+      if (voxel) {
+        return {
+          position: {
+            x: start.x + t * dx,
+            y: start.y + t * dy,
+            z: start.z + t * dz,
+          },
+          voxel,
+        };
+      }
+
+      // advance t to next nearest voxel boundary
+      if (txMax < tyMax) {
+        if (txMax < tzMax) {
+          ix += stepX;
+          t = txMax;
+          txMax += txDelta;
+          steppedIndex = 0;
+        } else {
+          iz += stepZ;
+          t = tzMax;
+          tzMax += tzDelta;
+          steppedIndex = 2;
+        }
+      } else {
+        if (tyMax < tzMax) {
+          iy += stepY;
+          t = tyMax;
+          tyMax += tyDelta;
+          steppedIndex = 1;
+        } else {
+          iz += stepZ;
+          t = tzMax;
+          tzMax += tzDelta;
+          steppedIndex = 2;
+        }
+      }
+    }
+    return null;
   },
 };
