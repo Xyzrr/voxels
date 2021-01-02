@@ -10,6 +10,8 @@ export interface PlayerCamera {
 export interface PlayerCameraInterface {
   init(player: Player): PlayerCamera;
   setThirdPersonCameraPosition(playerCamera: PlayerCamera): void;
+  setFirstPersonCameraPosition(playerCamera: PlayerCamera): void;
+  update(playerCamera: PlayerCamera): void;
   adaptToScreenSize(
     playerCamera: PlayerCamera,
     width: number,
@@ -37,16 +39,43 @@ export const PlayerCamera: PlayerCameraInterface = {
 
     player.update = (delta) => {
       update(delta);
-      PlayerCamera.setThirdPersonCameraPosition(playerCamera);
+      PlayerCamera.update(playerCamera);
     };
 
     player.onRotate = () => {
       onRotate?.();
       playerCamera.camera.quaternion.setFromEuler(player.rotation);
-      PlayerCamera.setThirdPersonCameraPosition(playerCamera);
+      PlayerCamera.update(playerCamera);
     };
 
     return playerCamera;
+  },
+
+  update(playerCamera) {
+    if (playerCamera.mode === 'first') {
+      PlayerCamera.setFirstPersonCameraPosition(playerCamera);
+    } else if (playerCamera.mode === 'third') {
+      PlayerCamera.setThirdPersonCameraPosition(playerCamera);
+    }
+  },
+
+  setFirstPersonCameraPosition(playerCamera) {
+    let boundingBoxCenter = new THREE.Vector3();
+    playerCamera.player.boundingBox.getCenter(boundingBoxCenter);
+    const playerCenter = playerCamera.player.position
+      .clone()
+      .add(boundingBoxCenter);
+
+    let cameraDirectionVector = new THREE.Vector3();
+    playerCamera.camera.getWorldDirection(cameraDirectionVector);
+
+    const newPosition = playerCenter.setY(playerCamera.player.position.y + 0.5);
+
+    playerCamera.camera.position.set(
+      newPosition.x,
+      newPosition.y,
+      newPosition.z
+    );
   },
 
   setThirdPersonCameraPosition(playerCamera) {
