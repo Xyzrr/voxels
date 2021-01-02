@@ -308,7 +308,7 @@ export const Player: PlayerInterface = {
       const reachDelta = new Vector3(0, 0, reach).applyEuler(player.rotation);
 
       const startPosition = Player.getEyePosition(player);
-      const endPosition = startPosition.add(reachDelta);
+      const endPosition = startPosition.clone().sub(reachDelta);
 
       const intersection = Physics.intersectRay(
         player.physics,
