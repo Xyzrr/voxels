@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {Player} from './player';
 
+const CAMERA_TO_EVENT_LISTENERS: WeakMap<PlayerCamera, any> = new WeakMap();
+
 export interface PlayerCamera {
   camera: THREE.PerspectiveCamera;
   mode: 'first' | 'third';
@@ -17,6 +19,8 @@ export interface PlayerCameraInterface {
     width: number,
     height: number
   ): void;
+  bindToUserControls(playerCamera: PlayerCamera): void;
+  unbindFromUserControls(playerCamera: PlayerCamera): void;
 }
 
 export const PlayerCamera: PlayerCameraInterface = {
@@ -102,5 +106,34 @@ export const PlayerCamera: PlayerCameraInterface = {
   adaptToScreenSize(playerCamera, width, height) {
     playerCamera.camera.aspect = width / height;
     playerCamera.camera.updateProjectionMatrix();
+  },
+
+  bindToUserControls(playerCamera) {
+    if (CAMERA_TO_EVENT_LISTENERS.has(playerCamera)) {
+      PlayerCamera.unbindFromUserControls(playerCamera);
+    }
+
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'F5') {
+        if (playerCamera.mode === 'third') {
+          playerCamera.mode = 'first';
+        } else {
+          playerCamera.mode = 'third';
+        }
+      }
+    };
+
+    CAMERA_TO_EVENT_LISTENERS.set(playerCamera, {onKeyDown});
+
+    window.addEventListener('keydown', onKeyDown);
+  },
+
+  unbindFromUserControls(playerCamera) {
+    window.removeEventListener(
+      'keydown',
+      CAMERA_TO_EVENT_LISTENERS.get(playerCamera).onKeyDown
+    );
+
+    CAMERA_TO_EVENT_LISTENERS.delete(playerCamera);
   },
 };

@@ -5,7 +5,7 @@ import {VoxelWorld} from './world';
 
 const GRAVITY = 19.6;
 
-const PLAYER_TO_EVENT_LISTENER: WeakMap<Player, any> = new WeakMap();
+const PLAYER_TO_EVENT_LISTENERS: WeakMap<Player, any> = new WeakMap();
 
 export interface Player {
   position: Vector3;
@@ -194,6 +194,10 @@ export const Player: PlayerInterface = {
   },
 
   bindToUserControls(player) {
+    if (PLAYER_TO_EVENT_LISTENERS.has(player)) {
+      Player.unbindFromUserControls(player);
+    }
+
     const onKeyDown = (e: KeyboardEvent): void => {
       if (['ArrowUp', 'w', 'W'].includes(e.key)) {
         Player.setMovingForward(player, true);
@@ -275,7 +279,7 @@ export const Player: PlayerInterface = {
       );
     };
 
-    PLAYER_TO_EVENT_LISTENER.set(player, {onKeyDown, onKeyUp, onMouseMove});
+    PLAYER_TO_EVENT_LISTENERS.set(player, {onKeyDown, onKeyUp, onMouseMove});
 
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('keydown', onKeyDown);
@@ -285,16 +289,17 @@ export const Player: PlayerInterface = {
   unbindFromUserControls(player) {
     window.removeEventListener(
       'keyup',
-      PLAYER_TO_EVENT_LISTENER.get(player).onKeyUp
+      PLAYER_TO_EVENT_LISTENERS.get(player).onKeyUp
     );
     window.removeEventListener(
       'keydown',
-
-      PLAYER_TO_EVENT_LISTENER.get(player).onKeyDown
+      PLAYER_TO_EVENT_LISTENERS.get(player).onKeyDown
     );
     window.removeEventListener(
       'mousemove',
-      PLAYER_TO_EVENT_LISTENER.get(player).onMouseMove
+      PLAYER_TO_EVENT_LISTENERS.get(player).onMouseMove
     );
+
+    PLAYER_TO_EVENT_LISTENERS.delete(player);
   },
 };

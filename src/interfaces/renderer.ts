@@ -19,6 +19,8 @@ import {PlayerCamera} from './camera';
 
 (window as any).THREE = THREE;
 
+const RENDERER_TO_EVENT_LISTENERS: WeakMap<VoxelRenderer, any> = new WeakMap();
+
 const worker = new Worker();
 
 export interface VoxelRenderer {
@@ -51,6 +53,8 @@ interface VoxelRendererInterface {
   loadChunk(renderer: VoxelRenderer, cellCoord: Coord): Promise<Chunk>;
   addNearbyCellsToQueue(renderer: VoxelRenderer): void;
   flushQueue(renderer: VoxelRenderer): Promise<void>;
+  bindToUserControls(renderer: VoxelRenderer): void;
+  unbindFromUserControls(renderer: VoxelRenderer): void;
 }
 
 export const VoxelRenderer: VoxelRendererInterface = {
@@ -141,6 +145,10 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
     renderer.player = player;
     renderer.camera = PlayerCamera.init(player);
+
+    if (RENDERER_TO_EVENT_LISTENERS.has(renderer)) {
+      PlayerCamera.bindToUserControls(renderer.camera);
+    }
   },
 
   bindToElement(renderer, container) {
@@ -365,6 +373,21 @@ export const VoxelRenderer: VoxelRendererInterface = {
       await VoxelRenderer.loadChunk(renderer, chunkCoord);
     }
     renderer.rendering = false;
-    // console.log('world blocks', renderer.world?.cache);
+  },
+
+  bindToUserControls(renderer) {
+    if (renderer.camera != null) {
+      PlayerCamera.bindToUserControls(renderer.camera);
+    }
+
+    RENDERER_TO_EVENT_LISTENERS.set(renderer, true);
+  },
+
+  unbindFromUserControls(renderer) {
+    if (renderer.camera != null) {
+      PlayerCamera.unbindFromUserControls(renderer.camera);
+    }
+
+    RENDERER_TO_EVENT_LISTENERS.delete(renderer);
   },
 };

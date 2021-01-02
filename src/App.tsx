@@ -16,6 +16,7 @@ const App: React.FC = React.memo(() => {
     if (container != null) {
       const world = VoxelWorld.init();
       const renderer = VoxelRenderer.init();
+      VoxelRenderer.bindToUserControls(renderer);
       VoxelRenderer.setWorld(renderer, world);
 
       const physics = Physics.init(world);
@@ -34,6 +35,7 @@ const App: React.FC = React.memo(() => {
       return () => {
         VoxelRenderer.unbindFromElement(renderer, container);
         Player.unbindFromUserControls(player);
+        VoxelRenderer.unbindFromUserControls(renderer);
       };
     }
   }, [container]);
