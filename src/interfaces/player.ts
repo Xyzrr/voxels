@@ -309,6 +309,20 @@ export const Player: PlayerInterface = {
         startPosition,
         endPosition
       );
+
+      if (intersection == null) {
+        return;
+      }
+
+      const adjustedPosition = intersection.position.add(
+        intersection.normal.multiplyScalar(0.5)
+      );
+
+      const voxelCoord = {
+        x: Math.floor(adjustedPosition.x),
+        y: Math.floor(adjustedPosition.y),
+        z: Math.floor(adjustedPosition.z),
+      };
     };
 
     PLAYER_TO_EVENT_LISTENERS.set(player, {

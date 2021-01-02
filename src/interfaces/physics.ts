@@ -26,7 +26,7 @@ export interface PhysicsInterface {
     physics: Physics,
     start: Vector3,
     end: Vector3
-  ): {position: Vector3; voxel: Voxel} | null;
+  ): {position: Vector3; normal: Vector3; voxel: Voxel} | null;
 }
 
 export const Physics: PhysicsInterface = {
@@ -164,12 +164,21 @@ export const Physics: PhysicsInterface = {
     while (t <= len) {
       const voxel = VoxelWorld.getVoxel(physics.world, {x: ix, y: iy, z: iz});
       if (voxel) {
+        const position = new Vector3(
+          start.x + t * dx,
+          start.y + t * dy,
+          start.z + t * dz
+        );
+
+        const normal = new Vector3(
+          steppedIndex === 0 ? -stepX : 0,
+          steppedIndex === 1 ? -stepY : 0,
+          steppedIndex === 2 ? -stepZ : 0
+        );
+
         return {
-          position: new Vector3(
-            start.x + t * dx,
-            start.y + t * dy,
-            start.z + t * dz
-          ),
+          position,
+          normal,
           voxel,
         };
       }
