@@ -22,7 +22,7 @@ export interface Neighbors {
 export interface VoxelWorld {
   cache: CoordMap<ChunkData>;
   getVoxel(coord: Coord): Voxel | null;
-  updateVoxel(coord: Coord, newVoxel: Voxel | null): void;
+  updateVoxel(coord: Coord, newVoxel: Voxel): void;
 }
 
 export interface VoxelWorldInterface {
@@ -30,7 +30,7 @@ export interface VoxelWorldInterface {
   getVoxel(world: VoxelWorld, coord: Coord): Voxel | null;
   getChunk(world: VoxelWorld, chunkCoord: Coord): ChunkData | null;
   getNeighbors(world: VoxelWorld, chunkCoord: Coord): Neighbors;
-  updateVoxel(world: VoxelWorld, coord: Coord, newVoxel: Voxel | null): void;
+  updateVoxel(world: VoxelWorld, coord: Coord, newVoxel: Voxel): void;
   loadChunk(world: VoxelWorld, chunkCoord: Coord): Promise<ChunkData>;
   loadChunkAndNeighbors(
     world: VoxelWorld,
@@ -53,14 +53,29 @@ export const VoxelWorld: VoxelWorldInterface = {
         if (chunk == null) {
           return Voxel.unloaded;
         }
-        return chunk[
+        const index =
           mod(coord.x, CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
-            mod(coord.y, CHUNK_SIZE) * CHUNK_SIZE +
-            mod(coord.z, CHUNK_SIZE)
-        ];
+          mod(coord.y, CHUNK_SIZE) * CHUNK_SIZE +
+          mod(coord.z, CHUNK_SIZE);
+        return chunk[index];
       },
 
-      updateVoxel(coord, newVoxel) {},
+      updateVoxel(coord, newVoxel) {
+        const chunkCoord = {
+          x: Math.floor(coord.x / CHUNK_SIZE),
+          y: Math.floor(coord.y / CHUNK_SIZE),
+          z: Math.floor(coord.z / CHUNK_SIZE),
+        };
+        const chunk = CoordMap.get(world.cache, chunkCoord);
+        if (chunk == null) {
+          return;
+        }
+        const index =
+          mod(coord.x, CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +
+          mod(coord.y, CHUNK_SIZE) * CHUNK_SIZE +
+          mod(coord.z, CHUNK_SIZE);
+        chunk[index] = newVoxel;
+      },
     };
 
     return world;

@@ -14,6 +14,7 @@ export interface Player {
   moveSpeed: number;
   boundingBox: Box3;
   physics?: Physics;
+  world?: VoxelWorld;
 
   flying: boolean;
 
@@ -34,6 +35,7 @@ export interface PlayerInterface {
   init(): Player;
 
   setPhysics(player: Player, physics: Physics): void;
+  setWorld(player: Player, world: VoxelWorld): void;
 
   getEyePosition(player: Player): Vector3;
 
@@ -166,6 +168,10 @@ export const Player: PlayerInterface = {
     player.physics = physics;
   },
 
+  setWorld(player, world) {
+    player.world = world;
+  },
+
   getEyePosition(player) {
     let boundingBoxCenter = new THREE.Vector3();
     player.boundingBox.getCenter(boundingBoxCenter);
@@ -294,7 +300,7 @@ export const Player: PlayerInterface = {
     };
 
     const onMouseDown = (e: MouseEvent): void => {
-      if (player.physics == null) {
+      if (player.physics == null || player.world == null) {
         return;
       }
 
@@ -323,6 +329,8 @@ export const Player: PlayerInterface = {
         y: Math.floor(adjustedPosition.y),
         z: Math.floor(adjustedPosition.z),
       };
+
+      VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
     };
 
     PLAYER_TO_EVENT_LISTENERS.set(player, {
