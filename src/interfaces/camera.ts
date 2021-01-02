@@ -28,7 +28,7 @@ export const PlayerCamera: PlayerCameraInterface = {
     const camera = new THREE.PerspectiveCamera(
       50,
       window.innerWidth / window.innerHeight,
-      1,
+      0.1,
       20000
     );
     camera.position.set(5, 15, 30);
@@ -73,7 +73,9 @@ export const PlayerCamera: PlayerCameraInterface = {
     let cameraDirectionVector = new THREE.Vector3();
     playerCamera.camera.getWorldDirection(cameraDirectionVector);
 
-    const newPosition = playerCenter.setY(playerCamera.player.position.y + 1.5);
+    const newPosition = playerCenter.setY(
+      playerCamera.player.position.y + 1.75
+    );
 
     playerCamera.camera.position.set(
       newPosition.x,
@@ -93,7 +95,7 @@ export const PlayerCamera: PlayerCameraInterface = {
     playerCamera.camera.getWorldDirection(cameraDirectionVector);
 
     const newPosition = playerCenter
-      .setY(playerCamera.player.position.y + 1.5)
+      .setY(playerCamera.player.position.y + 1.75)
       .sub(cameraDirectionVector.multiplyScalar(10));
 
     playerCamera.camera.position.set(
