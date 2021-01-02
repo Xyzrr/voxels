@@ -245,7 +245,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
                 [chunk.buffer, ...Object.values(neighbors).map((n) => n.buffer)]
               );
 
-              worker.onmessage = (e) => {
+              const callback = (e: MessageEvent<any>): void => {
+                worker.removeEventListener('message', callback);
+
                 console.log('Renderer: Received message from worker', e);
                 if (e.data.type === 'generateChunkGeometry') {
                   const {
@@ -323,6 +325,8 @@ export const VoxelRenderer: VoxelRendererInterface = {
                   resolve(chunk);
                 }
               };
+
+              worker.addEventListener('message', callback);
             }
           }
         );

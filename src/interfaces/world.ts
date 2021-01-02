@@ -117,13 +117,15 @@ export const VoxelWorld: VoxelWorldInterface = {
     return new Promise((resolve) => {
       console.log('World: Posting load chunk message', chunkCoord);
       worker.postMessage({type: 'loadChunk', chunkCoord});
-      worker.onmessage = (event) => {
+      const callback = (event: MessageEvent): void => {
+        worker.removeEventListener('message', callback);
         console.log('World: Received message from worker', event);
         if (event.data.type === 'loadChunk') {
           CoordMap.set(world.cache, event.data.coord, event.data.voxels);
           resolve(event.data.voxels);
         }
       };
+      worker.addEventListener('message', callback);
     });
   },
 
