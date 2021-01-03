@@ -204,7 +204,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
           renderer.scene.remove(renderer.voxelHighlight);
         }
 
-        const geometry = new THREE.BoxBufferGeometry(1.01, 1.01, 1.01);
+        const geometry = new THREE.BoxBufferGeometry(1.001, 1.001, 1.001);
         geometry.translate(0.5, 0.5, 0.5);
         const wireframe = new THREE.EdgesGeometry(geometry);
         const material = new THREE.LineBasicMaterial({
