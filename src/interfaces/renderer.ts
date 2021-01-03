@@ -149,8 +149,18 @@ export const VoxelRenderer: VoxelRendererInterface = {
       );
     };
 
+    const camera = PlayerCamera.init(player);
+
+    camera.onSetMode = (mode) => {
+      if (mode === 'first') {
+        line.visible = false;
+      } else {
+        line.visible = true;
+      }
+    };
+
     renderer.player = player;
-    renderer.camera = PlayerCamera.init(player);
+    renderer.camera = camera;
 
     if (RENDERER_TO_EVENT_LISTENERS.has(renderer)) {
       PlayerCamera.bindToUserControls(renderer.camera);

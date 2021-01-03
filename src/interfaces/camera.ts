@@ -3,14 +3,18 @@ import {Player} from './player';
 
 const CAMERA_TO_EVENT_LISTENERS: WeakMap<PlayerCamera, any> = new WeakMap();
 
+export type PlayerCameraMode = 'first' | 'third';
+
 export interface PlayerCamera {
   camera: THREE.PerspectiveCamera;
-  mode: 'first' | 'third';
+  mode: PlayerCameraMode;
   player: Player;
+  onSetMode?(mode: PlayerCameraMode): void;
 }
 
 export interface PlayerCameraInterface {
   init(player: Player): PlayerCamera;
+  setMode(playerCamera: PlayerCamera, mode: PlayerCameraMode): void;
   setThirdPersonCameraPosition(playerCamera: PlayerCamera): void;
   setFirstPersonCameraPosition(playerCamera: PlayerCamera): void;
   update(playerCamera: PlayerCamera): void;
@@ -53,6 +57,11 @@ export const PlayerCamera: PlayerCameraInterface = {
     };
 
     return playerCamera;
+  },
+
+  setMode(playerCamera, mode) {
+    playerCamera.mode = mode;
+    playerCamera.onSetMode?.(mode);
   },
 
   update(playerCamera) {
@@ -105,9 +114,9 @@ export const PlayerCamera: PlayerCameraInterface = {
     const onKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'F5') {
         if (playerCamera.mode === 'third') {
-          playerCamera.mode = 'first';
+          PlayerCamera.setMode(playerCamera, 'first');
         } else {
-          playerCamera.mode = 'third';
+          PlayerCamera.setMode(playerCamera, 'third');
         }
       }
     };
