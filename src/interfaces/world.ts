@@ -48,7 +48,8 @@ export const VoxelWorld: VoxelWorldInterface = {
       getVoxel(coord) {
         const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
         const chunk = CoordMap.get(world.cache, chunkCoord);
-        if (chunk == null) {
+        console.log('byte length 0');
+        if (chunk == null || chunk.byteLength === 0) {
           return Voxel.unloaded;
         }
         const index =
@@ -120,7 +121,7 @@ export const VoxelWorld: VoxelWorldInterface = {
     return new Promise((resolve) =>
       messageWorker(worker, {type: 'loadChunk', chunkCoord}).then(
         ({coord, voxels}) => {
-          console.log('World: Received message from worker', event);
+          console.log('World: Received message from worker', voxels);
           CoordMap.set(world.cache, coord, voxels);
           resolve(voxels);
         }

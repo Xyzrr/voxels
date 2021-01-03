@@ -278,6 +278,14 @@ export const VoxelRenderer: VoxelRendererInterface = {
             }
           }
 
+          const existing = CoordMap.get(renderer.loadedChunks, chunkCoord);
+          if (existing?.opaqueMesh != null) {
+            renderer.scene.remove(existing.opaqueMesh);
+          }
+          if (existing?.transparentMesh != null) {
+            renderer.scene.remove(existing.transparentMesh);
+          }
+
           const opaqueMesh =
             opaque == null
               ? undefined
