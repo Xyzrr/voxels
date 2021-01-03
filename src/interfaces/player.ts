@@ -224,7 +224,14 @@ export const Player: PlayerInterface = {
       z: Math.floor(adjustedPosition.z),
     };
 
-    if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
+    if (
+      VoxelWorld.getVoxel(player.world, voxelCoord) != null &&
+      !Physics.isIntersectingVoxel(
+        player.position,
+        player.boundingBox,
+        voxelCoord
+      )
+    ) {
       VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
     }
   },

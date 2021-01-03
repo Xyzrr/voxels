@@ -15,6 +15,11 @@ export interface Physics {
 
 export interface PhysicsInterface {
   init(world: VoxelWorld): Physics;
+  isIntersectingVoxel(
+    position: Vector3,
+    boundingBox: Box3,
+    coord: Coord
+  ): boolean;
   getCappedDelta(
     physics: Physics,
     position: Vector3,
@@ -40,6 +45,17 @@ export const Physics: PhysicsInterface = {
     return {
       world,
     };
+  },
+
+  isIntersectingVoxel(position, boundingBox, coord) {
+    return (
+      position.x + boundingBox.max.x > coord.x &&
+      position.y + boundingBox.max.y > coord.y &&
+      position.z + boundingBox.max.z > coord.z &&
+      position.x + boundingBox.min.x < coord.x + 1 &&
+      position.y + boundingBox.min.y < coord.y + 1 &&
+      position.z + boundingBox.min.z < coord.z + 1
+    );
   },
 
   getCappedDelta(physics, position, boundingBox, direction, delta) {
