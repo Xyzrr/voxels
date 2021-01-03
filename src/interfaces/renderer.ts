@@ -194,10 +194,14 @@ export const VoxelRenderer: VoxelRendererInterface = {
           renderer.scene.remove(renderer.voxelHighlight);
         }
 
-        const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
+        const geometry = new THREE.BoxBufferGeometry(1.01, 1.01, 1.01);
         geometry.translate(0.5, 0.5, 0.5);
-        const wireframe = new THREE.WireframeGeometry(geometry);
-        const line = new THREE.LineSegments(wireframe);
+        const wireframe = new THREE.EdgesGeometry(geometry);
+        const material = new THREE.LineBasicMaterial({
+          color: 0x000000,
+          linewidth: 40,
+        });
+        const line = new THREE.LineSegments(wireframe, material);
 
         const intersection = Player.raycast(renderer.player);
 
