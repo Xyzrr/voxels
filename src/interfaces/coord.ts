@@ -4,6 +4,16 @@ export interface Coord {
   z: number;
 }
 
+export interface CoordInterface {
+  equals(a: Coord, b: Coord): boolean;
+}
+
+export const Coord: CoordInterface = {
+  equals(a, b) {
+    return a.x === b.x && a.y === b.y && a.z === b.z;
+  },
+};
+
 export type CoordMap<T> = Map<number, Map<number, Map<number, T>>>;
 
 export interface CoordMapInterface {

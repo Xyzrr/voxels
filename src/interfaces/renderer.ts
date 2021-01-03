@@ -17,6 +17,7 @@ import {ChunkGeometryData} from '../workers/generateChunkGeometry';
 import {Chunk} from './chunk';
 import {PlayerCamera} from './camera';
 import {messageWorker} from '../util/messageWorker';
+import * as _ from 'lodash';
 
 (window as any).THREE = THREE;
 
@@ -51,9 +52,10 @@ interface VoxelRendererInterface {
     data: ChunkGeometryData,
     transparent: boolean
   ): THREE.Mesh | null;
+  renderChunksAroundVoxel(renderer: VoxelRenderer, voxelCoord: Coord): void;
   renderChunk(renderer: VoxelRenderer, chunkCoord: Coord): Promise<Chunk>;
-  loadChunk(renderer: VoxelRenderer, cellCoord: Coord): Promise<Chunk>;
-  addNearbyCellsToQueue(renderer: VoxelRenderer): void;
+  loadChunk(renderer: VoxelRenderer, chunkCoord: Coord): Promise<Chunk>;
+  addNearbyChunksToQueue(renderer: VoxelRenderer): void;
   flushQueue(renderer: VoxelRenderer): Promise<void>;
   bindToUserControls(renderer: VoxelRenderer): void;
   unbindFromUserControls(renderer: VoxelRenderer): void;
@@ -108,10 +110,9 @@ export const VoxelRenderer: VoxelRendererInterface = {
   setWorld(renderer, world) {
     const {updateVoxel} = world;
 
-    world.updateVoxel = (coord, newBlock) => {
-      updateVoxel(coord, newBlock);
-      const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
-      VoxelRenderer.renderChunk(renderer, chunkCoord);
+    world.updateVoxel = (coord, newVoxel) => {
+      updateVoxel(coord, newVoxel);
+      VoxelRenderer.renderChunksAroundVoxel(renderer, coord);
     };
 
     renderer.world = world;
@@ -183,7 +184,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
       const delta = now - renderer.lastFrameTime;
       renderer.lastFrameTime = now;
 
-      VoxelRenderer.addNearbyCellsToQueue(renderer);
+      VoxelRenderer.addNearbyChunksToQueue(renderer);
 
       renderer.player?.update(delta);
       if (renderer.camera != null) {
@@ -225,6 +226,38 @@ export const VoxelRenderer: VoxelRendererInterface = {
     const geometry = VoxelRenderer.buildChunkGeometry(data);
 
     return new THREE.Mesh(geometry, material);
+  },
+
+  async renderChunksAroundVoxel(renderer, voxelCoord) {
+    if (renderer.world == null) {
+      return;
+    }
+
+    const chunkCoordsToRender = [
+      VoxelWorld.chunkCoordFromVoxelCoord(renderer.world, voxelCoord),
+    ];
+
+    for (let face of VOXEL_FACES) {
+      let neighborVoxelCoord = {
+        x: voxelCoord.x + face.dir[0],
+        y: voxelCoord.y + face.dir[1],
+        z: voxelCoord.z + face.dir[2],
+      };
+      const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(
+        renderer.world,
+        neighborVoxelCoord
+      );
+      const dupe = _.find(chunkCoordsToRender, (c) =>
+        Coord.equals(c, chunkCoord)
+      );
+      if (dupe == null) {
+        chunkCoordsToRender.push(chunkCoord);
+      }
+    }
+
+    for (let chunkCoord of chunkCoordsToRender) {
+      await VoxelRenderer.renderChunk(renderer, chunkCoord);
+    }
   },
 
   async renderChunk(renderer, chunkCoord) {
@@ -342,7 +375,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
     });
   },
 
-  addNearbyCellsToQueue(renderer) {
+  addNearbyChunksToQueue(renderer) {
     if (renderer.player == null || renderer.world == null) {
       return;
     }
