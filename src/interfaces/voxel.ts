@@ -1,6 +1,7 @@
 export enum Voxel {
   Air = 0,
   Dirt,
+  Grass,
   Stone,
   Water,
 }

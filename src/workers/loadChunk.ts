@@ -4,10 +4,14 @@ import {CHUNK_SIZE} from '../lib/consts';
 import {Voxel} from '../interfaces/voxel';
 
 function computeVoxel(coord: Coord): Voxel {
-  const height =
+  const height = Math.floor(
     simplex2(coord.x / 94, coord.z / 94) * 5 +
-    simplex2(coord.x / 100, coord.z / 100) * 4;
-  if (coord.y <= height) {
+      simplex2(coord.x / 100, coord.z / 100) * 4
+  );
+  if (coord.y === height) {
+    return Voxel.Grass;
+  }
+  if (coord.y < height) {
     return Voxel.Dirt;
   }
   if (coord.y <= -2) {

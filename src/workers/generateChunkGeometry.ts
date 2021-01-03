@@ -5,7 +5,7 @@ import {Neighbors} from '../interfaces/world';
 
 const tileSize = 16;
 const tileTextureWidth = 256;
-const tileTextureHeight = 64;
+const tileTextureHeight = 48;
 
 export interface ChunkGeometryData {
   positions: Float32Array;
@@ -60,14 +60,13 @@ function getVoxel(
 export function getUv(voxel: Voxel): number {
   switch (voxel) {
     case Voxel.Dirt:
+      return 6;
+    case Voxel.Grass:
       return 7;
-      break;
     case Voxel.Stone:
       return 1;
-      break;
     case Voxel.Water:
       return 12;
-      break;
     default:
       return 0;
   }
