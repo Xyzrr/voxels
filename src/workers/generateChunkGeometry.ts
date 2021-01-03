@@ -1,5 +1,5 @@
 import {CHUNK_SIZE, VOXEL_FACES} from '../lib/consts';
-import {Voxel} from '../interfaces/voxel';
+import {Voxel, VoxelHelper} from '../interfaces/voxel';
 import {ChunkData} from '../interfaces/chunk';
 import {Neighbors} from '../interfaces/world';
 
@@ -59,13 +59,13 @@ function getVoxel(
 
 export function getUv(voxel: Voxel): number {
   switch (voxel) {
-    case Voxel.dirt:
+    case Voxel.Dirt:
       return 7;
       break;
-    case Voxel.stone:
+    case Voxel.Stone:
       return 1;
       break;
-    case Voxel.water:
+    case Voxel.Water:
       return 12;
       break;
     default:
@@ -88,7 +88,10 @@ function getGeometry(
       for (let k = 0; k < CHUNK_SIZE; k++) {
         const voxel = getVoxel(i, j, k, chunk, neighbors);
 
-        if (voxel !== Voxel.air && Voxel.isTransparent(voxel) === transparent) {
+        if (
+          voxel !== Voxel.Air &&
+          VoxelHelper.isTransparent(voxel) === transparent
+        ) {
           const uvVoxel = getUv(voxel);
 
           for (const {dir, corners, uvRow} of VOXEL_FACES) {
@@ -100,8 +103,9 @@ function getGeometry(
               neighbors
             );
             if (
-              neighbor === Voxel.air ||
-              (!Voxel.isTransparent(voxel) && Voxel.isTransparent(neighbor))
+              neighbor === Voxel.Air ||
+              (!VoxelHelper.isTransparent(voxel) &&
+                VoxelHelper.isTransparent(neighbor))
             ) {
               // this voxel has no neighbor in this direction so we need a face.
               const ndx = positions.length / 3;

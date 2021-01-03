@@ -1,6 +1,6 @@
 import {Box3, BoxBufferGeometry, Euler, Vector3} from 'three';
 import * as THREE from 'three';
-import {Physics} from './physics';
+import {Physics, RaycastResult} from './physics';
 import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
 
@@ -38,6 +38,7 @@ export interface PlayerInterface {
   setWorld(player: Player, world: VoxelWorld): void;
 
   getEyePosition(player: Player): Vector3;
+  raycast(player: Player): RaycastResult | null;
 
   jump(player: Player): void;
   setMovingForward(player: Player, value: boolean): void;
@@ -180,6 +181,26 @@ export const Player: PlayerInterface = {
     return eyePosition;
   },
 
+  raycast(player) {
+    if (player.physics == null) {
+      return null;
+    }
+
+    const reach = 10;
+    const reachDelta = new Vector3(0, 0, reach).applyEuler(player.rotation);
+
+    const startPosition = Player.getEyePosition(player);
+    const endPosition = startPosition.clone().sub(reachDelta);
+
+    const intersection = Physics.intersectRay(
+      player.physics,
+      startPosition,
+      endPosition
+    );
+
+    return intersection;
+  },
+
   jump(player) {
     player.yVelocity = 10;
   },
@@ -300,21 +321,44 @@ export const Player: PlayerInterface = {
     };
 
     const onMouseDown = (e: MouseEvent): void => {
-      if (player.physics == null || player.world == null) {
+      if (player.world == null) {
         return;
       }
 
-      const reach = 10;
-      const reachDelta = new Vector3(0, 0, reach).applyEuler(player.rotation);
+      const intersection = Player.raycast(player);
 
-      const startPosition = Player.getEyePosition(player);
-      const endPosition = startPosition.clone().sub(reachDelta);
+      if (intersection == null) {
+        return;
+      }
 
-      const intersection = Physics.intersectRay(
-        player.physics,
-        startPosition,
-        endPosition
+      const adjustedPosition = intersection.position.sub(
+        intersection.normal.multiplyScalar(0.5)
       );
+
+      const voxelCoord = {
+        x: Math.floor(adjustedPosition.x),
+        y: Math.floor(adjustedPosition.y),
+        z: Math.floor(adjustedPosition.z),
+      };
+
+      if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
+        VoxelWorld.updateVoxel(player.world, voxelCoord, 0);
+      }
+    };
+
+    PLAYER_TO_EVENT_LISTENERS.set(player, {
+      onKeyDown,
+      onKeyUp,
+      onMouseMove,
+      onMouseDown,
+    });
+
+    const onContextMenu = (e: MouseEvent): void => {
+      if (player.world == null) {
+        return;
+      }
+
+      const intersection = Player.raycast(player);
 
       if (intersection == null) {
         return;
@@ -330,22 +374,16 @@ export const Player: PlayerInterface = {
         z: Math.floor(adjustedPosition.z),
       };
 
-      if (VoxelWorld.getVoxel(player.world, voxelCoord) !== Voxel.unloaded) {
+      if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
         VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
       }
     };
-
-    PLAYER_TO_EVENT_LISTENERS.set(player, {
-      onKeyDown,
-      onKeyUp,
-      onMouseMove,
-      onMouseDown,
-    });
 
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('contextmenu', onContextMenu);
   },
 
   unbindFromUserControls(player) {
@@ -364,6 +402,10 @@ export const Player: PlayerInterface = {
     window.removeEventListener(
       'mousedown',
       PLAYER_TO_EVENT_LISTENERS.get(player).onMouseDown
+    );
+    window.removeEventListener(
+      'contextmenu',
+      PLAYER_TO_EVENT_LISTENERS.get(player).onContextMenu
     );
 
     PLAYER_TO_EVENT_LISTENERS.delete(player);

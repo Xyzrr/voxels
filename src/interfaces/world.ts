@@ -48,9 +48,8 @@ export const VoxelWorld: VoxelWorldInterface = {
       getVoxel(coord) {
         const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
         const chunk = CoordMap.get(world.cache, chunkCoord);
-        console.log('byte length 0');
         if (chunk == null || chunk.byteLength === 0) {
-          return Voxel.unloaded;
+          return null;
         }
         const index =
           mod(coord.x, CHUNK_SIZE) * CHUNK_SIZE * CHUNK_SIZE +

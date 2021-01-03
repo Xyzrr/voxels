@@ -1,7 +1,13 @@
 import {Box3, Vector3} from 'three';
 import {Coord} from './coord';
-import {Voxel} from './voxel';
+import {Voxel, VoxelHelper} from './voxel';
 import {VoxelWorld} from './world';
+
+export interface RaycastResult {
+  position: Vector3;
+  normal: Vector3;
+  voxel: Voxel;
+}
 
 export interface Physics {
   world: VoxelWorld;
@@ -26,7 +32,7 @@ export interface PhysicsInterface {
     physics: Physics,
     start: Vector3,
     end: Vector3
-  ): {position: Vector3; normal: Vector3; voxel: Voxel} | null;
+  ): RaycastResult | null;
 }
 
 export const Physics: PhysicsInterface = {
@@ -71,7 +77,7 @@ export const Physics: PhysicsInterface = {
               [direction]: yy,
               [axis2]: zz,
             } as unknown) as Coord);
-            if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
+            if (voxel == null || VoxelHelper.isSolid(voxel)) {
               if (cappedDelta > yy - topY) {
                 cappedDelta = yy - topY;
                 collided = true;
@@ -89,7 +95,7 @@ export const Physics: PhysicsInterface = {
               [direction]: yy,
               [axis2]: zz,
             } as unknown) as Coord);
-            if (voxel === Voxel.dirt || voxel === Voxel.unloaded) {
+            if (voxel == null || VoxelHelper.isSolid(voxel)) {
               if (cappedDelta < yy + 1 - position[direction]) {
                 cappedDelta = yy + 1 - position[direction];
                 collided = true;
@@ -163,7 +169,7 @@ export const Physics: PhysicsInterface = {
     // main loop along raycast vector
     while (t <= len) {
       const voxel = VoxelWorld.getVoxel(physics.world, {x: ix, y: iy, z: iz});
-      if (voxel) {
+      if (voxel != null && VoxelHelper.isSolid(voxel)) {
         const position = new Vector3(
           start.x + t * dx,
           start.y + t * dy,

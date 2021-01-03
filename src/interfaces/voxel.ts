@@ -1,12 +1,20 @@
-export type Voxel = number;
+export enum Voxel {
+  Air = 0,
+  Dirt,
+  Stone,
+  Water,
+}
 
-export const Voxel = {
-  unloaded: -1,
-  air: 0,
-  dirt: 1,
-  stone: 2,
-  water: 3,
+export interface VoxelInterface {
+  isTransparent(voxel: Voxel): boolean;
+  isSolid(voxel: Voxel): boolean;
+}
+
+export const VoxelHelper: VoxelInterface = {
   isTransparent(voxel: Voxel) {
-    return voxel === Voxel.water;
+    return voxel === Voxel.Water;
+  },
+  isSolid(voxel: Voxel) {
+    return ![Voxel.Air, Voxel.Water].includes(voxel);
   },
 };

@@ -8,12 +8,12 @@ function computeVoxel(coord: Coord): Voxel {
     simplex2(coord.x / 94, coord.z / 94) * 5 +
     simplex2(coord.x / 100, coord.z / 100) * 4;
   if (coord.y <= height) {
-    return Voxel.dirt;
+    return Voxel.Dirt;
   }
   if (coord.y <= -2) {
-    return Voxel.water;
+    return Voxel.Water;
   }
-  return Voxel.air;
+  return Voxel.Air;
 }
 
 export function loadChunk(data: {
