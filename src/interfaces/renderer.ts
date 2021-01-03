@@ -75,7 +75,14 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
       scene: (() => {
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(BLACK);
+
+        const loader = new THREE.TextureLoader();
+        const texture = loader.load('skybox.png', () => {
+          const rt = new THREE.WebGLCubeRenderTarget(texture.image.height);
+          rt.fromEquirectangularTexture(renderer.glRenderer, texture);
+          scene.background = rt;
+        });
+
         scene.fog = new THREE.FogExp2(WHITE, 0.00015);
 
         function addLight(x: number, y: number, z: number): void {
