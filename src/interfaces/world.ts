@@ -46,11 +46,7 @@ export const VoxelWorld: VoxelWorldInterface = {
       cache: CoordMap.init(),
 
       getVoxel(coord) {
-        const chunkCoord = {
-          x: Math.floor(coord.x / CHUNK_SIZE),
-          y: Math.floor(coord.y / CHUNK_SIZE),
-          z: Math.floor(coord.z / CHUNK_SIZE),
-        };
+        const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
         const chunk = CoordMap.get(world.cache, chunkCoord);
         if (chunk == null) {
           return Voxel.unloaded;
@@ -63,11 +59,7 @@ export const VoxelWorld: VoxelWorldInterface = {
       },
 
       updateVoxel(coord, newVoxel) {
-        const chunkCoord = {
-          x: Math.floor(coord.x / CHUNK_SIZE),
-          y: Math.floor(coord.y / CHUNK_SIZE),
-          z: Math.floor(coord.z / CHUNK_SIZE),
-        };
+        const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
         const chunk = CoordMap.get(world.cache, chunkCoord);
         if (chunk == null) {
           return;

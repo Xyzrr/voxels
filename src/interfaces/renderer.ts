@@ -111,7 +111,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
     world.updateVoxel = (coord, newBlock) => {
       updateVoxel(coord, newBlock);
       const chunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(world, coord);
-      console.log('re-rendering chunk', chunkCoord);
       VoxelRenderer.renderChunk(renderer, chunkCoord);
     };
 

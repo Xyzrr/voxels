@@ -57,7 +57,7 @@ export const Player: PlayerInterface = {
     const player: Player = {
       position: new Vector3(0, 2, 0),
       rotation: new Euler(0, 0, 0, 'YXZ'),
-      moveSpeed: 40,
+      moveSpeed: 10,
       boundingBox: new Box3(new Vector3(0, 0, 0), new Vector3(1, 2, 1)),
 
       flying: false,
@@ -330,7 +330,9 @@ export const Player: PlayerInterface = {
         z: Math.floor(adjustedPosition.z),
       };
 
-      VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
+      if (VoxelWorld.getVoxel(player.world, voxelCoord) !== Voxel.unloaded) {
+        VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
+      }
     };
 
     PLAYER_TO_EVENT_LISTENERS.set(player, {
