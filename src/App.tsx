@@ -1,4 +1,4 @@
-import './App.css';
+import * as S from './App.styles';
 
 import React from 'react';
 import {VoxelRenderer} from './interfaces/renderer';
@@ -42,12 +42,20 @@ const App: React.FC = React.memo(() => {
   }, [container]);
 
   return (
-    <div
-      ref={React.useCallback((node) => setContainer(node), [])}
-      onClick={(e) => {
-        e.currentTarget.requestPointerLock();
-      }}
-    />
+    <>
+      <div
+        ref={React.useCallback((node) => setContainer(node), [])}
+        onClick={(e) => {
+          e.currentTarget.requestPointerLock();
+        }}
+      />
+      <S.CrosshairWrapper>
+        <S.Crosshair>
+          <S.CrosshairVertical></S.CrosshairVertical>
+          <S.CrosshairHorizontal></S.CrosshairHorizontal>
+        </S.Crosshair>
+      </S.CrosshairWrapper>
+    </>
   );
 });
 
