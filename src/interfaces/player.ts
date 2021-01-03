@@ -39,6 +39,8 @@ export interface PlayerInterface {
 
   getEyePosition(player: Player): Vector3;
   raycast(player: Player): RaycastResult | null;
+  placeVoxel(player: Player): void;
+  removeVoxel(player: Player): void;
 
   jump(player: Player): void;
   setMovingForward(player: Player, value: boolean): void;
@@ -201,6 +203,58 @@ export const Player: PlayerInterface = {
     return intersection;
   },
 
+  placeVoxel(player) {
+    if (player.world == null) {
+      return;
+    }
+
+    const intersection = Player.raycast(player);
+
+    if (intersection == null) {
+      return;
+    }
+
+    const adjustedPosition = intersection.position.add(
+      intersection.normal.multiplyScalar(0.5)
+    );
+
+    const voxelCoord = {
+      x: Math.floor(adjustedPosition.x),
+      y: Math.floor(adjustedPosition.y),
+      z: Math.floor(adjustedPosition.z),
+    };
+
+    if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
+      VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
+    }
+  },
+
+  removeVoxel(player) {
+    if (player.world == null) {
+      return;
+    }
+
+    const intersection = Player.raycast(player);
+
+    if (intersection == null) {
+      return;
+    }
+
+    const adjustedPosition = intersection.position.sub(
+      intersection.normal.multiplyScalar(0.5)
+    );
+
+    const voxelCoord = {
+      x: Math.floor(adjustedPosition.x),
+      y: Math.floor(adjustedPosition.y),
+      z: Math.floor(adjustedPosition.z),
+    };
+
+    if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
+      VoxelWorld.updateVoxel(player.world, voxelCoord, 0);
+    }
+  },
+
   jump(player) {
     player.yVelocity = 10;
   },
@@ -321,28 +375,10 @@ export const Player: PlayerInterface = {
     };
 
     const onMouseDown = (e: MouseEvent): void => {
-      if (player.world == null) {
-        return;
-      }
-
-      const intersection = Player.raycast(player);
-
-      if (intersection == null) {
-        return;
-      }
-
-      const adjustedPosition = intersection.position.sub(
-        intersection.normal.multiplyScalar(0.5)
-      );
-
-      const voxelCoord = {
-        x: Math.floor(adjustedPosition.x),
-        y: Math.floor(adjustedPosition.y),
-        z: Math.floor(adjustedPosition.z),
-      };
-
-      if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
-        VoxelWorld.updateVoxel(player.world, voxelCoord, 0);
+      if (e.button === 0) {
+        Player.removeVoxel(player);
+      } else {
+        Player.placeVoxel(player);
       }
     };
 
@@ -353,37 +389,10 @@ export const Player: PlayerInterface = {
       onMouseDown,
     });
 
-    const onContextMenu = (e: MouseEvent): void => {
-      if (player.world == null) {
-        return;
-      }
-
-      const intersection = Player.raycast(player);
-
-      if (intersection == null) {
-        return;
-      }
-
-      const adjustedPosition = intersection.position.add(
-        intersection.normal.multiplyScalar(0.5)
-      );
-
-      const voxelCoord = {
-        x: Math.floor(adjustedPosition.x),
-        y: Math.floor(adjustedPosition.y),
-        z: Math.floor(adjustedPosition.z),
-      };
-
-      if (VoxelWorld.getVoxel(player.world, voxelCoord) != null) {
-        VoxelWorld.updateVoxel(player.world, voxelCoord, 1);
-      }
-    };
-
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('contextmenu', onContextMenu);
   },
 
   unbindFromUserControls(player) {
@@ -402,10 +411,6 @@ export const Player: PlayerInterface = {
     window.removeEventListener(
       'mousedown',
       PLAYER_TO_EVENT_LISTENERS.get(player).onMouseDown
-    );
-    window.removeEventListener(
-      'contextmenu',
-      PLAYER_TO_EVENT_LISTENERS.get(player).onContextMenu
     );
 
     PLAYER_TO_EVENT_LISTENERS.delete(player);
