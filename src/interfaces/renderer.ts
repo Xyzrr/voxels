@@ -36,6 +36,7 @@ export interface VoxelRenderer {
   loadedChunks: CoordMap<Chunk>;
   chunkQueue: Coord[];
   rendering: boolean;
+  voxelHighlight?: THREE.LineSegments;
   resizeHandler?: () => void;
 }
 
@@ -186,7 +187,36 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
       VoxelRenderer.addNearbyChunksToQueue(renderer);
 
-      renderer.player?.update(delta);
+      if (renderer.player != null) {
+        renderer.player.update(delta);
+
+        if (renderer.voxelHighlight != null) {
+          renderer.scene.remove(renderer.voxelHighlight);
+        }
+
+        const geometry = new THREE.BoxBufferGeometry(1, 1, 1);
+        geometry.translate(0.5, 0.5, 0.5);
+        const wireframe = new THREE.WireframeGeometry(geometry);
+        const line = new THREE.LineSegments(wireframe);
+
+        const intersection = Player.raycast(renderer.player);
+
+        if (intersection != null) {
+          const adjustedPosition = intersection.position.sub(
+            intersection.normal.multiplyScalar(0.5)
+          );
+
+          line.position.set(
+            Math.floor(adjustedPosition.x),
+            Math.floor(adjustedPosition.y),
+            Math.floor(adjustedPosition.z)
+          );
+
+          renderer.voxelHighlight = line;
+          renderer.scene.add(line);
+        }
+      }
+
       if (renderer.camera != null) {
         renderer.glRenderer.render(renderer.scene, renderer.camera.camera);
       }
