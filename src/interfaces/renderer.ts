@@ -343,25 +343,22 @@ export const VoxelRenderer: VoxelRendererInterface = {
   },
 
   addNearbyCellsToQueue(renderer) {
-    if (!renderer.player) {
+    if (renderer.player == null || renderer.world == null) {
       return;
     }
 
-    const {x, y, z} = renderer.player.position;
-
-    const playerCellCoord = {
-      x: Math.floor(x / CHUNK_SIZE),
-      y: Math.floor(y / CHUNK_SIZE),
-      z: Math.floor(z / CHUNK_SIZE),
-    };
+    const playerChunkCoord = VoxelWorld.chunkCoordFromVoxelCoord(
+      renderer.world,
+      renderer.player.position
+    );
 
     for (let dx = -DRAW_DISTANCE; dx <= DRAW_DISTANCE; dx++) {
       for (let dy = -DRAW_DISTANCE_Y; dy <= DRAW_DISTANCE_Y; dy++) {
         for (let dz = -DRAW_DISTANCE; dz <= DRAW_DISTANCE; dz++) {
           const coord = {
-            x: playerCellCoord.x + dx,
-            y: playerCellCoord.y + dy,
-            z: playerCellCoord.z + dz,
+            x: playerChunkCoord.x + dx,
+            y: playerChunkCoord.y + dy,
+            z: playerChunkCoord.z + dz,
           };
           if (!CoordMap.get(renderer.loadedChunks, coord)) {
             renderer.chunkQueue.push(coord);
