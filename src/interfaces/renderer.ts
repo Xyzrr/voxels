@@ -87,13 +87,13 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
         function addLight(x: number, y: number, z: number): void {
           const color = WHITE;
-          const intensity = 1;
+          const intensity = 0.8;
           const light = new THREE.DirectionalLight(color, intensity);
           light.position.set(x, y, z);
           scene.add(light);
         }
         addLight(-1, 2, 4);
-        addLight(1, -1, -2);
+        addLight(1, 1, -2);
 
         return scene;
       })(),
