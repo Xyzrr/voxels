@@ -60,8 +60,8 @@ export const Player: PlayerInterface = {
     const player: Player = {
       position: new Vector3(0, 2, 0),
       rotation: new Euler(0, 0, 0, 'YXZ'),
-      moveSpeed: 10,
-      boundingBox: new Box3(new Vector3(0, 0, 0), new Vector3(1, 2, 1)),
+      moveSpeed: 6,
+      boundingBox: new Box3(new Vector3(0, 0, 0), new Vector3(0.7, 1.8, 0.7)),
 
       flying: false,
 
@@ -179,7 +179,7 @@ export const Player: PlayerInterface = {
     let boundingBoxCenter = new THREE.Vector3();
     player.boundingBox.getCenter(boundingBoxCenter);
     const playerCenter = player.position.clone().add(boundingBoxCenter);
-    const eyePosition = playerCenter.setY(player.position.y + 1.75);
+    const eyePosition = playerCenter.setY(player.position.y + 1.5);
     return eyePosition;
   },
 
@@ -256,7 +256,7 @@ export const Player: PlayerInterface = {
   },
 
   jump(player) {
-    player.yVelocity = 10;
+    player.yVelocity = 8;
   },
 
   setMovingForward(player, value) {
