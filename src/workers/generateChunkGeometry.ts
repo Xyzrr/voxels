@@ -172,7 +172,6 @@ export function generateChunkGeometry(data: {
 
   return {
     message: {
-      type: 'generateChunkGeometry',
       transparent: transparentGeometry,
       opaque: opaqueGeometry,
       chunk,

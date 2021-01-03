@@ -51,7 +51,7 @@ export function loadChunk(data: {
   );
 
   return {
-    message: {type: 'loadChunk', coord: data.chunkCoord, voxels},
+    message: {voxels},
     transfer: [voxels.buffer],
   };
 }

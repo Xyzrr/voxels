@@ -119,9 +119,9 @@ export const VoxelWorld: VoxelWorldInterface = {
     console.log('World: Posting load chunk message', chunkCoord);
     return new Promise((resolve) =>
       messageWorker(worker, {type: 'loadChunk', chunkCoord}).then(
-        ({coord, voxels}) => {
+        ({voxels}) => {
           console.log('World: Received message from worker', voxels);
-          CoordMap.set(world.cache, coord, voxels);
+          CoordMap.set(world.cache, chunkCoord, voxels);
           resolve(voxels);
         }
       )
