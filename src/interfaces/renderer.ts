@@ -85,15 +85,24 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
         scene.fog = new THREE.FogExp2(WHITE, 0.00015);
 
-        function addLight(x: number, y: number, z: number): void {
-          const color = WHITE;
-          const intensity = 0.8;
-          const light = new THREE.DirectionalLight(color, intensity);
-          light.position.set(x, y, z);
-          scene.add(light);
-        }
-        addLight(-1, 2, 4);
-        addLight(1, 1, -2);
+        const light = new THREE.DirectionalLight(WHITE, 0.8);
+        light.position.set(0, 100, 0);
+        light.target.position.set(40, 0, 40);
+        light.castShadow = true;
+        light.shadow.camera.left = -128;
+        light.shadow.camera.right = 128;
+        light.shadow.camera.top = 128;
+        light.shadow.camera.bottom = -128;
+        light.shadow.mapSize.width = 1024;
+        light.shadow.mapSize.height = 1024;
+        // apparently need negative bias for self-shadows
+        light.shadow.bias = -0.001;
+        scene.add(light);
+        scene.add(light.target);
+
+        const ambient = new THREE.AmbientLight(WHITE, 0.45);
+        scene.add(ambient);
+        // addLight(1, 1, -2);
 
         return scene;
       })(),
@@ -102,6 +111,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
         const glRenderer = new THREE.WebGLRenderer();
         glRenderer.setPixelRatio(window.devicePixelRatio);
         glRenderer.setSize(window.innerWidth, window.innerHeight);
+        glRenderer.shadowMap.enabled = true;
         return glRenderer;
       })(),
 
@@ -276,7 +286,14 @@ export const VoxelRenderer: VoxelRendererInterface = {
     });
     const geometry = VoxelRenderer.buildChunkGeometry(data);
 
-    return new THREE.Mesh(geometry, material);
+    const mesh = new THREE.Mesh(geometry, material);
+
+    if (!transparent) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    }
+
+    return mesh;
   },
 
   async renderChunksAroundVoxel(renderer, voxelCoord) {
@@ -374,6 +391,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
             opaque == null
               ? undefined
               : VoxelRenderer.buildChunkMesh(renderer, opaque, false);
+
           const transparentMesh =
             transparent == null
               ? undefined
