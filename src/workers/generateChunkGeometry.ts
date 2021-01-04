@@ -64,7 +64,7 @@ export function getUv(voxel: Voxel): number {
     case Voxel.Grass:
       return 7;
     case Voxel.Stone:
-      return 1;
+      return 3;
     case Voxel.Water:
       return 12;
     default:

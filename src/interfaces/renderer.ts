@@ -87,7 +87,7 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
         const light = new THREE.DirectionalLight(WHITE, 0.8);
         light.position.set(0, 100, 0);
-        light.target.position.set(40, 0, 40);
+        light.target.position.set(-40, 0, -40);
         light.castShadow = true;
         light.shadow.camera.left = -128;
         light.shadow.camera.right = 128;

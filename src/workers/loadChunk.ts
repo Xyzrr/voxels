@@ -8,6 +8,12 @@ function computeVoxel(coord: Coord): Voxel {
     simplex2(coord.x / 94, coord.z / 94) * 5 +
       simplex2(coord.x / 100, coord.z / 100) * 4
   );
+  const x = coord.x;
+  const y = coord.y - 50;
+  const z = coord.z;
+  if (Math.sqrt(x * x + y * y + z * z) < 5) {
+    return Voxel.Stone;
+  }
   if (coord.y === height && coord.y >= -2) {
     return Voxel.Grass;
   }
