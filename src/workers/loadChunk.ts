@@ -8,10 +8,10 @@ function computeVoxel(coord: Coord): Voxel {
     simplex2(coord.x / 94, coord.z / 94) * 5 +
       simplex2(coord.x / 100, coord.z / 100) * 4
   );
-  if (coord.y === height) {
+  if (coord.y === height && coord.y >= -2) {
     return Voxel.Grass;
   }
-  if (coord.y < height) {
+  if (coord.y <= height) {
     return Voxel.Dirt;
   }
   if (coord.y <= -2) {
