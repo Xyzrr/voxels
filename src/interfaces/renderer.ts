@@ -102,7 +102,6 @@ export const VoxelRenderer: VoxelRendererInterface = {
 
         const ambient = new THREE.AmbientLight(WHITE, 0.45);
         scene.add(ambient);
-        // addLight(1, 1, -2);
 
         return scene;
       })(),

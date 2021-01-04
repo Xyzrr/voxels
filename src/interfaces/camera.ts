@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {Vector3} from 'three';
+import {Physics} from './physics';
 import {Player} from './player';
 
 const CAMERA_TO_EVENT_LISTENERS: WeakMap<PlayerCamera, any> = new WeakMap();
@@ -32,7 +34,7 @@ export const PlayerCamera: PlayerCameraInterface = {
     const camera = new THREE.PerspectiveCamera(
       50,
       window.innerWidth / window.innerHeight,
-      0.1,
+      0.02,
       20000
     );
     camera.position.set(5, 15, 30);
@@ -90,9 +92,24 @@ export const PlayerCamera: PlayerCameraInterface = {
     playerCamera.camera.getWorldDirection(cameraDirectionVector);
 
     const eyePosition = Player.getEyePosition(playerCamera.player);
-    const newCameraPosition = eyePosition.sub(
-      cameraDirectionVector.multiplyScalar(10)
-    );
+
+    const delta = cameraDirectionVector.clone().multiplyScalar(-10);
+    let newCameraPosition = eyePosition.clone().add(delta);
+
+    if (playerCamera.player.physics != null) {
+      const intersection = Physics.intersectRay(
+        playerCamera.player.physics,
+        eyePosition,
+        newCameraPosition
+      );
+      if (intersection != null) {
+        newCameraPosition = intersection.position.sub(
+          delta.multiplyScalar(0.02)
+        );
+      }
+    }
+
+    console.log('campos', newCameraPosition);
 
     playerCamera.camera.position.set(
       newCameraPosition.x,
