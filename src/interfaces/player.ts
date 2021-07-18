@@ -1,7 +1,6 @@
-import {Box3, BoxBufferGeometry, Euler, Vector3} from 'three';
+import {Box3, Euler, Vector3} from 'three';
 import * as THREE from 'three';
 import {Physics, RaycastResult} from './physics';
-import {Voxel} from './voxel';
 import {VoxelWorld} from './world';
 
 const GRAVITY = 19.6;

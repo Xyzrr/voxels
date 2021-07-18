@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {Vector3} from 'three';
 import {Physics} from './physics';
 import {Player} from './player';
 

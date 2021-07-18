@@ -6,7 +6,6 @@ import {Coord, CoordMap} from './coord';
 import {Player} from './player';
 import {VoxelWorld} from './world';
 import {
-  BLACK,
   CHUNK_SIZE,
   DRAW_DISTANCE,
   DRAW_DISTANCE_Y,
